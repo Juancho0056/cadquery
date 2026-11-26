@@ -1,2 +1,2 @@
-# Estado
-Base previamente confirmada: 141 PASS (7720e8b). Se preserva serial_arm anterior y se incorpora cadena genérica con puertos compactos simétricos, segmentos intercambiables de longitud configurable y pruebas de una, dos y tres articulaciones. Seis pruebas nuevas escritas; resultado exacto pendiente. Garra/base, exportación, validación física pendientes. No apto para carga.
+# Estado V2
+V1 preservada en feature/bootstrap-foundation, SHA 48cd9a6, CI success run 45860557192. V2: contrato universal, alojamiento, macho, pasador y segmentos independientes implementados. Ocho pruebas nuevas escritas, CI pendiente. Pasador sin retención propia, articulación compacta, base, garra y validación física no implementadas. No apto para carga.

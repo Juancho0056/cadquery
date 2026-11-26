@@ -1,0 +1,3 @@
+# ADR-0011 — Gate de ejecución exacta
+No añadir geometrías de producción ni afirmar un cartucho funcional mientras no se disponga del resultado de la suite exacta. Se incorpora workflow CAD validation para cada push, PR y ejecución manual, Python 3.11 y CadQuery 2.8.0. Publica evidencia JUnit incluso ante fallo cuando el archivo existe. El resultado del job, no el número de casos escritos, determina el estado. Si instalación o ejecución falla, corregir primero. Las pruebas físicas siguen independientes.
+El selector aislado no está conectado a las uñas; no se considera interbloqueo. El siguiente diseño debe incluir guías, transmisión de contacto, retorno, detentes y verificación de recorrido en el conjunto desmontable.

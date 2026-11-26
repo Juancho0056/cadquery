@@ -1,2 +1,2 @@
 # Estado V2
-Uniones y codos exclusivamente. CI 45866190660 de 92de685: success. Limpieza de ambas mitades y diagnóstico de interferencias integrado en CQ-editor; dos pruebas nuevas, CI pendiente. Retención del pasador angular y del puerto, botón, acabado de transición y pruebas físicas pendientes. No apto para carga.
+Alcance exclusivo: uniones y codos. Retención de eje y barrido aprobados en 92de685 (45866190660). Limpieza 2813936 visualizada, CI en curso al iniciar. Nuevo pasador con hombro y tapa, ocho pruebas escritas. Tapa/guía sin fijación definida, no retorno automático ni botón. CI exacto pendiente. No apto para carga.

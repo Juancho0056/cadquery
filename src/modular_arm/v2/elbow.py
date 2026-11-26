@@ -21,6 +21,12 @@ class Elbow:
     lock_clearance: float=.4
     pitch: int=30
     mouth: float=54.
+    capture_wall: float=2.
+    capture_clearance: float=.4
+    capture_flange: float=7.4
+    capture_flange_height: float=2.
+    capture_stem: float=4.
+    capture_cap_height: float=2.5
     def __post_init__(self):
         if any(not math.isfinite(v) or v<=0 for n in self.__dataclass_fields__ if n!="port" for v in [getattr(self,n)]):
             raise ValueError("invalid elbow dimensions")
@@ -28,6 +34,10 @@ class Elbow:
             raise ValueError("invalid indexing")
         if 2*self.lock_radius*math.sin(math.radians(self.pitch/2))<=self.lock+self.lock_clearance:
             raise ValueError("overlapping index holes")
+        if not self.capture_stem<self.lock<self.capture_flange or self.capture_flange+self.capture_clearance+2*self.capture_wall>=2*(self.diameter/2-self.lock_radius):
+            raise ValueError("capture guide exceeds rim")
+        if self.capture_clearance>=self.cheek or self.capture_stem+self.capture_clearance>=self.capture_flange:
+            raise ValueError("invalid capture geometry")
         offset=self.mouth-self.port.engagement-self.port.back-self.diameter/2
         if not 0.5<=offset<=4.:
             raise ValueError("socket back outside supported neck/bridge envelope")
@@ -85,7 +95,34 @@ def retained_axle(c):
     return {name:p.rotate((0,0,0),(1,0,0),180).translate(cq.Vector(0,0,c.total/2+3.))
             for name,p in keeper_parts(k).items()}
 
-def elbow_parts(c=None,angle=60.,locked=True):
+def captive_lock(c,locked=True):
+    """Pull-to-release, captive by a separate annular cap.
+    No spring or fastening of cap is represented; cap must be secured before use.
+    """
+    x=c.lock_radius
+    top=c.total/2
+    stroke=c.rotor_height+c.gap+c.cheek+2.
+    # Tip in locked position reaches through bottom cheek.
+    bottom=-top-1.
+    flange_z=top+c.capture_clearance
+    flange_h=c.capture_flange_height
+    cavity_top=flange_z+flange_h+stroke+c.capture_clearance
+    outside=c.capture_flange+c.capture_clearance+2*c.capture_wall
+    tower=cylinder(x,0,top,outside,cavity_top-top).cut(
+        cylinder(x,0,top-1,c.capture_flange+c.capture_clearance,cavity_top-top+2))
+    cap=cylinder(x,0,cavity_top,outside,c.capture_cap_height).cut(
+        cylinder(x,0,cavity_top-1,c.capture_stem+c.capture_clearance,c.capture_cap_height+2))
+    shaft=cylinder(x,0,bottom,c.lock,flange_z+flange_h-bottom)
+    flange=cylinder(x,0,flange_z,c.capture_flange,flange_h)
+    stem=cylinder(x,0,flange_z+flange_h,c.capture_stem,
+        cavity_top+c.capture_cap_height+1-(flange_z+flange_h))
+    head=cylinder(x,0,cavity_top+c.capture_cap_height+1,c.lock+4,3.)
+    pull=shaft.fuse(flange).fuse(stem).fuse(head).clean()
+    if not locked:
+        pull=pull.translate(cq.Vector(0,0,stroke))
+    return {"lock_guide":tower.clean(),"lock_cap":cap.clean(),"index_pin":pull}
+
+def elbow_parts(c=None,angle=60.,locked=True,*,captive=False):
     c=c or Elbow()
     if not math.isfinite(angle) or abs(angle)>90:
         raise ValueError("angle outside prototype range")
@@ -95,6 +132,8 @@ def elbow_parts(c=None,angle=60.,locked=True):
     axle=retained_axle(c)
     parts["axle"]=axle["grooved_pin"]
     parts["axle_keeper"]=axle["snap_keeper"]
-    if locked:
+    if captive:
+        parts.update(captive_lock(c,locked))
+    elif locked:
         parts["index_pin"]=pin(c,c.lock,c.lock_radius)
     return parts

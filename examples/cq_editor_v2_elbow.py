@@ -17,7 +17,8 @@ from itertools import combinations
 import cadquery as cq
 EXPLODED=False
 CHECK_INTERFERENCE=True
-parts=elbow_parts(angle=ANGLE,locked=LOCKED)
+CAPTIVE=True
+parts=elbow_parts(angle=ANGLE,locked=LOCKED,captive=CAPTIVE)
 for i,(name,part) in enumerate(parts.items()):
     shown=part.translate(cq.Vector(0,0,12*i)) if EXPLODED else part
     show_object(shown,name=name,options={"color":(.85,.55,.15) if "pin" in name or "keeper" in name else (.15,.65,.55) if name=="moving" else (.55,.65,.75)})

@@ -1,2 +1,2 @@
 # Estado V3
-Base 1755b41: CI success 45870388965. Nueva intervención: banco concéntrico propio inspirado en referencia Thingiverse 7168674, ocho lóbulos Ø36, carcasa Ø60, engrane 6, carrera 7, cámara de retorno. 18 casos escritos; CI pendiente. No es articulación final: faltan apoyos independientes, retención axial, topes y resorte físico. Alcance limitado al bloqueo; accesorios aplazados. No apto para carga.
+Núcleo b2b5486: CI en curso al comenzar. Banco retenido independiente: camisa radial, anillo axial y cuatro posiciones de fijación nominal. Seis pruebas nuevas escritas; CI pendiente. Fijaciones, topes del émbolo, retorno físico, ensamblaje y resistencia no certificados. No apto para carga.

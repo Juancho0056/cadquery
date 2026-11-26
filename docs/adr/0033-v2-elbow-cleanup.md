@@ -1,0 +1,2 @@
+# ADR-0033 — Limpieza booleana y diagnóstico visual
+Captura local a 60° sin objetos de interferencia por encima de 1e-6 mm³. CI 45866190660 del SHA 92de685 reporta success. Las aristas aparentes pueden ser caras coplanares residuales o escalones reales de transición. Se aplica clean() a ambas mitades y se valida sólido único; no se alteran cotas. Se incorpora diagnóstico de interferencias y vista explosionada al ejemplo existente. La limpieza no elimina escalones geométricos reales. Dos pruebas nuevas, CI pendiente. No apto para carga.

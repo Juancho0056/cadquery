@@ -1,2 +1,2 @@
 # Estado V2
-Alcance exclusivo: uniones y codos. Conector 159 PASS (7d506cf). Codo corregido 3178ba3, CI en curso al comenzar. Eje central con ranura y clip exterior, 20 pruebas nuevas escritas incluyendo barrido desbloqueado. Pendientes resultado CI, retención del pasador angular y del puerto, accionamiento por botón y validación física. No apto para carga.
+Uniones y codos exclusivamente. CI 45866190660 de 92de685: success. Limpieza de ambas mitades y diagnóstico de interferencias integrado en CQ-editor; dos pruebas nuevas, CI pendiente. Retención del pasador angular y del puerto, botón, acabado de transición y pruebas físicas pendientes. No apto para carga.

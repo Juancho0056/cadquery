@@ -50,6 +50,7 @@ def fixed_half(c):
     body=body.fuse(port)
     for x,d in ((0,c.axle+c.axle_clearance),(c.lock_radius,c.lock+c.lock_clearance)):
         body=body.cut(cylinder(x,0,-c.total/2-1,d,c.total+2))
+    body=body.clean()
     if not body.isValid() or len(body.Solids())!=1:
         raise ValueError("disconnected or invalid elbow half")
     return body
@@ -64,6 +65,9 @@ def moving_half(c):
     for angle in range(0,360,c.pitch):
         t=math.radians(angle)
         body=body.cut(cylinder(c.lock_radius*math.cos(t),c.lock_radius*math.sin(t),-c.rotor_height/2-1,c.lock+c.lock_clearance,c.rotor_height+2))
+    body=body.clean()
+    if not body.isValid() or len(body.Solids())!=1:
+        raise ValueError("disconnected or invalid moving half")
     return body
 
 def pin(c,d,x):

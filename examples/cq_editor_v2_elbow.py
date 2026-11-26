@@ -13,5 +13,20 @@ else:
 from modular_arm.v2.elbow import elbow_parts
 ANGLE=60.
 LOCKED=True
-for name,part in elbow_parts(angle=ANGLE,locked=LOCKED).items():
-    show_object(part,name=name,options={"color":(.85,.55,.15) if "pin" in name else (.15,.65,.55) if name=="moving" else (.55,.65,.75)})
+from itertools import combinations
+import cadquery as cq
+EXPLODED=False
+CHECK_INTERFERENCE=True
+parts=elbow_parts(angle=ANGLE,locked=LOCKED)
+for i,(name,part) in enumerate(parts.items()):
+    shown=part.translate(cq.Vector(0,0,12*i)) if EXPLODED else part
+    show_object(shown,name=name,options={"color":(.85,.55,.15) if "pin" in name or "keeper" in name else (.15,.65,.55) if name=="moving" else (.55,.65,.75)})
+if CHECK_INTERFERENCE:
+    defects=[]
+    for (a,p),(b,q) in combinations(parts.items(),2):
+        overlap=p.intersect(q)
+        if overlap.Volume()>1e-6:
+            defects.append((a,b,overlap.Volume()))
+            if not EXPLODED:
+                show_object(overlap,name=f"interference_{a}_{b}",options={"color":(1.,0.,0.)})
+    print("Interference audit:",defects if defects else "PASS")

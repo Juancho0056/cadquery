@@ -23,9 +23,14 @@ def blank(index):
     clip=cq.Solid.makeBox(62,100,100,cq.Vector(-30,-50,-40))
     shoulder=plan().intersect(slab).intersect(clip)
     tube=cq.Solid.makeCylinder(RADIUS,24,cq.Vector(24,0,AXES[index]),cq.Vector(1,0,0))
-    # First prototype uses a short flat shoulder, not a curved offset.
-    # The shoulder ends at x32; the round tube begins inside it.
-    result=shoulder.fuse(tube).clean()
+    # Straight centerline, constant axial limits. A ruled transition changes
+    # only the corner radius and width, removing the abrupt shoulder at X32.
+    from modular_arm.v4.transition import rounded_wire
+    z=AXES[index]
+    wires=[rounded_wire(30.,19.,14.,z,.5),
+           rounded_wire(45.,RADIUS,RADIUS,z,13.90)]
+    ramp=cq.Solid.makeLoft(wires,ruled=True).intersect(plan()).intersect(slab)
+    result=shoulder.fuse(tube).fuse(ramp).clean()
     if index==1:
         result=joint.turn(result,180)
     if not result.isValid() or len(result.Solids())!=1:

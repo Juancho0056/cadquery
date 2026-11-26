@@ -1,3 +1,3 @@
 # Estado
-Línea base exacta: 89 passed in 24.91s y auditoría coaxial exitosa (641e067, run 45747057695).
-Nueva iteración: corredera común sobre tapa, dos palancas excéntricas, empujadores y guía parcial. Cinco pruebas nuevas escritas; auditoría experimental separada y resultado pendiente. P01 y P02 parciales; P03 retorno, P04 detentes, P05 seguro cautivo, P06 interfaz de brazo pendientes; P07 parcial. No se acredita transmisión automática, guía cautiva ni interbloqueo. No apto para carga.
+Línea base exacta: 89 pruebas y auditoría coaxial PASS (641e067). Run 45747449196 del selector inicial reportó success; auditoría común no incluida en ese run.
+Se modifica el selector integrado: punta redondeada, empujadores extendidos, techo de guía, topes de carrera, seguro angular con clip inferior. Cinco pruebas nuevas y auditoría común obligatoria; ejecución pendiente. P01/P02/P05/P07 parciales; P03/P04/P06 pendientes. No apto para carga.

@@ -19,6 +19,9 @@ jobs:
       - name: Audit integrated coaxial actuation
         if: always()
         run: python scripts/audit_manual_actuation.py > actuation-audit.json
+      - name: Audit common selector assembly
+        if: always()
+        run: python scripts/audit_common_selector.py > common-selector-audit.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -26,3 +29,4 @@ jobs:
           path: |
             pytest-results.xml
             actuation-audit.json
+            common-selector-audit.json

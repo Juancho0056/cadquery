@@ -1,2 +1,2 @@
 # Estado V2
-V1 preservada. Alcance inmediato: uniones universales y codos exclusivamente. Conector 7d506cf: CI en curso al comenzar. Se incorpora codo compacto indexado manual, diez casos nuevos escritos. Pendientes: resolver interferencias si aparecen, retención axial de pasadores, montaje y recorrido, accionamiento rápido, ensayo físico. Base, garra y accesorios aplazados. No apto para carga.
+Uniones y codos exclusivamente. Conector 7d506cf: 159 PASS, run 45864630701. Codo 655ea33: 160 PASS, 9 FAIL por configuración por defecto (run 45865347079). Corrección del constructor, validación de sólidos y cinco pruebas de compatibilidad adicionales publicadas; CI pendiente. Retención axial, botón, recorrido y validación física pendientes. No apto para carga.

@@ -27,8 +27,9 @@ class Elbow:
             raise ValueError("invalid indexing")
         if 2*self.lock_radius*math.sin(math.radians(self.pitch/2))<=self.lock+self.lock_clearance:
             raise ValueError("overlapping index holes")
-        if self.mouth-self.port.engagement-self.port.back>=self.diameter/2:
-            raise ValueError("disconnected socket")
+        offset=self.mouth-self.port.engagement-self.port.back-self.diameter/2
+        if not 0.5<=offset<=4.:
+            raise ValueError("socket back outside supported neck/bridge envelope")
     @property
     def total(self): return self.rotor_height+2*self.gap+2*self.cheek
 
@@ -48,6 +49,8 @@ def fixed_half(c):
     body=body.fuse(port)
     for x,d in ((0,c.axle+c.axle_clearance),(c.lock_radius,c.lock+c.lock_clearance)):
         body=body.cut(cylinder(x,0,-c.total/2-1,d,c.total+2))
+    if not body.isValid() or len(body.Solids())!=1:
+        raise ValueError("disconnected or invalid elbow half")
     return body
 
 def moving_half(c):

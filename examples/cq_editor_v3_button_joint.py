@@ -13,7 +13,7 @@ else:
 from modular_arm.v3.button_joint import parts,Joint,spring_envelope
 import cadquery as cq
 from itertools import combinations
-ANGLE=60.
+ANGLE=45.
 PRESSED=False
 EXPLODED=False
 SHOW_SPRING_ENVELOPE=False

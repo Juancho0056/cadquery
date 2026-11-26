@@ -2,7 +2,7 @@ import pytest
 from itertools import combinations
 from modular_arm.v3.button_joint import Joint,parts,spring_envelope
 
-@pytest.mark.parametrize("angle",[-90,-60,-30,0,30,60,90])
+@pytest.mark.parametrize("angle",[-90,-45,0,45,90])
 def test_engaged(angle):
     p=parts(angle=angle)
     for n,s in p.items():
@@ -23,3 +23,11 @@ def test_pressed(angle):
 def test_nonindexed():
     with pytest.raises(ValueError):
         parts(angle=17)
+
+def test_minimum_dog_section():
+    c=Joint()
+    assert c.tooth_width>=5
+    assert c.tooth_radius-c.core_radius>=4
+    assert 360//c.pitch==8
+    with pytest.raises(ValueError):
+        Joint(tooth_width=3.)

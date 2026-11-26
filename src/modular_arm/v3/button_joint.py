@@ -10,20 +10,22 @@ from modular_arm.v2.connector import Port, socket, box
 class Joint:
     port: Port=field(default_factory=Port)
     diameter: float=48.
-    pitch: int=30
+    pitch: int=45
     core_radius: float=8.
-    tooth_radius: float=12.
-    tooth_width: float=3.
+    tooth_radius: float=12.5
+    tooth_width: float=5.
     clearance: float=.3
     stroke: float=7.
     mouth: float=54.
     def __post_init__(self):
         if not all(math.isfinite(getattr(self,n)) and getattr(self,n)>0 for n in self.__dataclass_fields__ if n!="port"):
             raise ValueError("positive finite dimensions required")
+        if self.tooth_width<5 or self.tooth_radius-self.core_radius<4:
+            raise ValueError("minimum robust dog dimensions")
         # Only this axial stack is supported until the full stack is parameterized.
         if self.pitch not in (30,45,60) or self.stroke!=7 or self.diameter!=48 or self.mouth!=54:
             raise ValueError("unsupported axial stack")
-        if not 6.5<self.core_radius<self.tooth_radius<13 or self.tooth_width+self.clearance>=2*self.core_radius*math.sin(math.radians(self.pitch/2)):
+        if not 6.5<self.core_radius<self.tooth_radius<13 or self.tooth_width+2*self.clearance>=2*(self.core_radius+self.clearance)*math.tan(math.radians(self.pitch/2)):
             raise ValueError("invalid dog profile")
 
 def cyl(r,z,h):
@@ -70,7 +72,7 @@ def spring_envelope(c,pressed=False):
     # Reserved volume, NOT a physical spring or interference-bearing solid.
     return cyl(5,-6,7 if pressed else 14)
 
-def parts(c=None,angle=60.,pressed=False):
+def parts(c=None,angle=45.,pressed=False):
     c=c or Joint()
     if not math.isfinite(angle) or abs(angle)>90:
         raise ValueError("angle outside inspection range")

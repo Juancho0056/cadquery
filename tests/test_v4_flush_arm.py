@@ -31,4 +31,15 @@ def test_integrated_poses(angle,travel):
     archive=os.environ.get("ARM_REFERENCE_ZIP")
     if not archive:
         pytest.skip("set ARM_REFERENCE_ZIP")
-    assert audit(parts(archive,angle,travel,flush=True))==[]
+    assert audit(parts(archive,angle,travel,flush=True,clocking=180.))==[]
+
+def test_legacy_fold_interference_detected():
+    from modular_arm.v4.integrated_arm import parts,audit
+    archive=os.environ.get("ARM_REFERENCE_ZIP")
+    if not archive:
+        pytest.skip("set ARM_REFERENCE_ZIP")
+    defects=audit(parts(archive,180,0,flush=True,clocking=0.))
+    assert len(defects)==1
+    a,b,volume=defects[0]
+    assert (a,b)==("arm_a_integrated","arm_b_integrated")
+    assert volume>0.01

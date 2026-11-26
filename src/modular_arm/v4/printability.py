@@ -30,3 +30,18 @@ def overhang_report(triangles,build_axis,limit=45.,base_tolerance=.05):
             "candidate_facets":int(bad.sum()),
             "max_downward_angle_deg":float(angles[~on_bed[good]].max()) if (~on_bed[good]).any() else 0.,
             "bed_face_area_mm2":float(lengths[on_bed].sum()/2)}
+
+def regional_overhang(triangles,indices,*,direction,join_x=46.):
+    """Partition candidate facets by centroid along the outward arm axis.
+    Regions are spatial bins, not semantic identification of internal faces.
+    """
+    t=np.asarray(triangles,dtype=float)[np.asarray(indices,dtype=int)]
+    if direction not in (-1,1):
+        raise ValueError("direction must be -1 or 1")
+    x=direction*t.mean(axis=1)[:,0]
+    area=np.linalg.norm(np.cross(t[:,1]-t[:,0],t[:,2]-t[:,0]),axis=1)/2
+    masks={"joint":x<=28.,
+           "transition":(x>28.)&(x<join_x+2.),
+           "original_body":x>=join_x+2.}
+    return {name:{"area_mm2":float(area[mask].sum()),"facets":int(mask.sum())}
+            for name,mask in masks.items()}

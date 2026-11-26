@@ -22,3 +22,15 @@ def test_ramp_limits_and_terminal(i):
     assert s.BoundingBox().zmax==pytest.approx(LIMITS[i][1],abs=1e-5)
     r=measure(s,45.5 if i==5 else -45.5)
     assert r.centroid_z_mm==pytest.approx(AXES[i],abs=.02)
+
+@pytest.mark.parametrize("direction",[-1,1])
+def test_regional_partition(direction):
+    from modular_arm.v4.printability import regional_overhang
+    t=np.array([[[x*direction,0,0],[x*direction,1,0],[x*direction,0,1]] for x in (10,35,60)])
+    r=regional_overhang(t,[0,1,2],direction=direction)
+    assert all(v["facets"]==1 and v["area_mm2"]==pytest.approx(.5) for v in r.values())
+
+def test_empty_regional_partition():
+    from modular_arm.v4.printability import regional_overhang
+    r=regional_overhang(np.zeros((1,3,3)),[],direction=1)
+    assert all(v["facets"]==0 and v["area_mm2"]==0 for v in r.values())

@@ -1,2 +1,2 @@
 # Estado V2
-V1 preservada en feature/bootstrap-foundation, SHA 48cd9a6, CI success run 45860557192. V2: contrato universal, alojamiento, macho, pasador y segmentos independientes implementados. Ocho pruebas nuevas escritas, CI pendiente. Pasador sin retención propia, articulación compacta, base, garra y validación física no implementadas. No apto para carga.
+V1 preservada. Alcance inmediato: uniones universales y codos exclusivamente. Conector 7d506cf: CI en curso al comenzar. Se incorpora codo compacto indexado manual, diez casos nuevos escritos. Pendientes: resolver interferencias si aparecen, retención axial de pasadores, montaje y recorrido, accionamiento rápido, ensayo físico. Base, garra y accesorios aplazados. No apto para carga.

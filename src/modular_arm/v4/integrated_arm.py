@@ -68,17 +68,17 @@ def align_body(m,index,*,axis_z=None):
     m.apply_translation((-JOIN_X if index==1 else JOIN_X,0,CENTER_Z[index] if axis_z is None else axis_z))
     return m
 
-def joint_half(index,*,axis_z=None):
+def joint_half(index,*,axis_z=None,reinforcement=0.):
     """Construct exterior first; reuse the canonical V4 machining operations."""
     from modular_arm.v4.transition import finished_half
-    result=finished_half(index,axis_z=axis_z)
+    result=finished_half(index,axis_z=axis_z,reinforcement=reinforcement)
     if not result.isValid() or len(result.Solids())!=1:
         raise ValueError("invalid integrated CAD half")
     return result
 
-def joining_half(index,*,axis_z=None):
+def joining_half(index,*,axis_z=None,reinforcement=0.):
     """Keep exterior up to the cut; use a buried spigot to avoid near-coincident skins."""
-    s=joint_half(index,axis_z=axis_z)
+    s=joint_half(index,axis_z=axis_z,reinforcement=reinforcement)
     direction=-1 if index==1 else 1
     # The measured original section is solid near the cut. The smaller
     # spigot deliberately stays well inside that section, not on its skin.
@@ -115,11 +115,11 @@ def preservation_report(original,integrated,index):
     return {"added_mm3":0. if added.is_empty else abs(float(added.volume)),
             "removed_mm3":0. if removed.is_empty else abs(float(removed.volume))}
 
-def integrated_half(archive,index,*,axis_z=None):
+def integrated_half(archive,index,*,axis_z=None,reinforcement=0.):
     """Boolean fuse, never concatenate disconnected shells or silently fall back."""
     tm=mesh_library()
     body=align_body(crop_terminal(original_mesh(archive,index),index),index,axis_z=axis_z)
-    half=cad_mesh(joining_half(index,axis_z=axis_z))
+    half=cad_mesh(joining_half(index,axis_z=axis_z,reinforcement=reinforcement))
     overlap=tm.boolean.intersection([body,half],engine="manifold")
     if overlap.is_empty or overlap.volume<=1:
         raise ValueError("insufficient overlap for integral union")
@@ -142,7 +142,7 @@ def axis_heights(offset=15.4):
         return dict(CENTER_Z)
     return {1:11.7-offset/2,5:11.7+offset/2}
 
-def parts(archive,angle=0.,travel=0.,*,offset=15.4):
+def parts(archive,angle=0.,travel=0.,*,offset=15.4,reinforcement=0.):
     if not math.isfinite(angle):
         raise ValueError("invalid angle")
     # Retain original indexing and travel contract.
@@ -150,7 +150,7 @@ def parts(archive,angle=0.,travel=0.,*,offset=15.4):
     tm=mesh_library()
     heights=axis_heights(offset)
     a=integrated_half(archive,1,axis_z=heights[1])
-    b=integrated_half(archive,5,axis_z=heights[5])
+    b=integrated_half(archive,5,axis_z=heights[5],reinforcement=reinforcement)
     b.apply_transform(tm.transformations.rotation_matrix(math.radians(angle),(0,0,1)))
     return {"arm_a_integrated":a,"arm_b_integrated":b,
             **{n:cad_mesh(s) for n,s in base.items() if n not in ("arm_a","arm_b")}}
@@ -190,13 +190,13 @@ def audit(parts):
 
 PRINTABLE=("arm_a_integrated","arm_b_integrated","button")
 
-def export(archive,destination,angle=0.,travel=0.,*,offset=15.4):
-    p=parts(archive,angle,travel,offset=offset)
+def export(archive,destination,angle=0.,travel=0.,*,offset=15.4,reinforcement=0.):
+    p=parts(archive,angle,travel,offset=offset,reinforcement=reinforcement)
     defects=audit(p)
     if defects:
         raise ValueError(f"interference mm3: {defects}")
     # Export neutral individual parts rather than the operating pose.
-    neutral=parts(archive,0.,0.,offset=offset) if (angle,travel)!=(0.,0.) else p
+    neutral=parts(archive,0.,0.,offset=offset,reinforcement=reinforcement) if (angle,travel)!=(0.,0.) else p
     dest=Path(destination)
     printable=dest/"prototype_printable"
     assembly=dest/"assembly_preview"
@@ -212,7 +212,7 @@ def export(archive,destination,angle=0.,travel=0.,*,offset=15.4):
               "printable":list(PRINTABLE),
               "metal_hardware":[{"item":"radial retainer","quantity":3,"spec":"nominal M3 dog-point; exact length and thread pending"},
                                 {"item":"compression spring","quantity":1,"spec":"OD 18 mm envelope; installed 13 mm, compressed 6 mm; commercial part pending"}],
-              "assembly_pose":{"angle":angle,"travel":travel,"axis_offset_mm":offset},
+              "assembly_pose":{"angle":angle,"travel":travel,"axis_offset_mm":offset,"b_reinforcement_mm":reinforcement},
               "notes":"Only prototype_printable contains candidate printed parts. Assembly preview is not a print plate. Spring not exported as a solid. Printing orientation not qualified."}
     (dest/"manifest.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
     return p

@@ -70,12 +70,12 @@ def measure(shape,x,*,thickness=.02):
         raise ValueError(f"no planar cap at {x}")
     return Section(low,*polygon_section(triangles))
 
-def screen(offset=15.4,stations=range(28,46)):
+def screen(offset=15.4,stations=range(28,46),*,reinforcement=0.):
     """Compare actual machined neck cross sections before the STL join."""
     z=axis_heights(offset)
     result={}
     for index,sign in ((1,-1),(5,1)):
-        shape=finished_half(index,axis_z=z[index])
+        shape=finished_half(index,axis_z=z[index],reinforcement=reinforcement if index==5 else 0.)
         rows=[measure(shape,sign*float(x)) for x in stations]
         if not rows:
             raise ValueError("no stations")
@@ -83,4 +83,4 @@ def screen(offset=15.4,stations=range(28,46)):
              "minimum_area":asdict(min(rows,key=lambda r:r.area_mm2)),
              "minimum_wy":asdict(min(rows,key=lambda r:r.wy_mm3)),
              "minimum_wz":asdict(min(rows,key=lambda r:r.wz_mm3))}
-    return {"offset_mm":offset,"scope":"CAD neck only; no load rating", "halves":result}
+    return {"offset_mm":offset,"b_reinforcement_mm":reinforcement,"scope":"CAD neck only; no load rating", "halves":result}

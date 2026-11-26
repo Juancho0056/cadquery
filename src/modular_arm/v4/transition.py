@@ -38,10 +38,14 @@ def rounded_wire(x,w,h,z,r):
                    cq.Edge.makeThreePointArc(a[2*i+1],mid[i],a[(2*i+2)%8])])
     return cq.Wire.assembleEdges(es)
 
-def outer_blank(index, *, axis_z=None):
+def outer_blank(index, *, axis_z=None, reinforcement=0.):
     """Build the exterior before any journal, gear or retainer cuts."""
     if index not in (1,5):
         raise ValueError("unsupported reference body")
+    if not math.isfinite(reinforcement) or not 0<=reinforcement<=6:
+        raise ValueError("reinforcement must be 0..6 mm")
+    if index==1 and reinforcement:
+        raise ValueError("reinforcement is exclusive to B")
     bottom,top,z_end=(-10.,12.,4.) if index==1 else (12.4,26.4,19.4)
     if axis_z is not None:
         if not math.isfinite(axis_z) or not 4.<=axis_z<=19.4:
@@ -54,10 +58,22 @@ def outer_blank(index, *, axis_z=None):
                             z0+(z_end-z0)*t,.5+(13.90-.5)*t)
     wires=[profile(27,0),profile(28,0),profile(32,.12),profile(38,.55),
            profile(44,.95),profile(46,1),profile(48,1)]
+    start=28.
+    if reinforcement:
+        # Rebuild the transverse envelope, not an attachment to the old neck.
+        # Additional height is biased upward; lower nominal profiles remain.
+        def reinforced(x,t,lift):
+            extra=reinforcement*lift
+            return rounded_wire(x,22+(13.94-22)*t,h0+(13.94-h0)*t+extra/2,
+                                z0+(z_end-z0)*t+extra/2,.5+(13.90-.5)*t)
+        wires=[reinforced(x,t,lift) for x,t,lift in (
+            (23,0,0),(24,0,0),(26,0,.45),(28,0,1),
+            (32,.12,1),(38,.55,.5),(44,.95,0),(46,1,0),(48,1,0))]
+        start=24.
     env=cq.Solid.makeLoft(wires,ruled=False)
     # Keep the exact disc height inside x=28. The envelope beyond it
     # is part of the original blank, not a reinforcement on an old neck.
-    env=env.cut(cq.Solid.makeBox(100,200,200,V(-72,-100,-100)))
+    env=env.cut(cq.Solid.makeBox(100,200,200,V(start-100,-100,-100)))
     slab=cq.Solid.makeBox(58,100,top-bottom,V(-30,-50,bottom))
     s=plan().intersect(slab.fuse(env)).clean()
     if index==1:
@@ -66,7 +82,7 @@ def outer_blank(index, *, axis_z=None):
         raise ValueError("invalid integral outer blank")
     return s
 
-def finished_half(index, *, axis_z=None):
+def finished_half(index, *, axis_z=None, reinforcement=0.):
     from modular_arm.v4 import joint
-    b=outer_blank(index,axis_z=axis_z)
+    b=outer_blank(index,axis_z=axis_z,reinforcement=reinforcement)
     return joint.fixed(b) if index==1 else joint.moving(b)

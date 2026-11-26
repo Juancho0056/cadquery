@@ -1,2 +1,2 @@
 # V4
-Base 0ab26de: 45/45 PASS local en 77.95 s sin warnings reportados. Se incorpora cribado geométrico de secciones resistentes de cuellos CAD y seis pruebas. No cambia geometría ni se selecciona offset final. FEA, extensión completa, hardware y resistencia física no acreditados. No apto para carga.
+Base b16e5a2: usuario confirma 51 pruebas acumuladas y aporta informe de 144 secciones. Refuerzo B opcional 4/6 mm, estudio comparativo y 10 pruebas nuevas. Predeterminado 0 conserva diseño validado. Meta Wy 2000 mm³, sin medición candidata todavía. No apto para carga.

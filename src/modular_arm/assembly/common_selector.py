@@ -15,6 +15,8 @@ class CommonSelectorConfig:
     actuation: ActuationConfig = field(default_factory=ActuationConfig)
     lever_radius_mm: float = 16.0
     follower_radius_mm: float = 2.0
+    lever_arm_width_mm: float = 2.4
+    contact_edge_margin_mm: float = 0.1
     neutral_gap_mm: float = 0.3
     rail_clearance_mm: float = 0.4
     rail_width_mm: float = 5.0
@@ -42,6 +44,8 @@ class CommonSelectorConfig:
             raise ValueError("selector index holes overlap or exceed crossbar")
         if self.index_head_diameter_mm <= self.index_pin_diameter_mm+self.index_pin_clearance_mm:
             raise ValueError("index head must exceed bore")
+        if self.lever_arm_width_mm >= 2*self.follower_radius_mm:
+            raise ValueError("lever arm must be narrower than follower")
         if self.lever_radius_mm <= self.actuation.handle_radius_mm:
             raise ValueError("lever must extend beyond handle")
         if self.rail_length_mm <= 2*self.half_span_mm + 2*self.stroke_mm:
@@ -88,7 +92,7 @@ def lever(c,reverse,q):
     y=c.contact.pivot_y_mm
     z=c.drive_z_mm
     r=c.follower_radius_mm
-    arm=box_at(x,y+c.lever_radius_mm/2,z,2*r,c.lever_radius_mm,c.slider_height_mm)
+    arm=box_at(x,y+c.lever_radius_mm/2,z,c.lever_arm_width_mm,c.lever_radius_mm,c.slider_height_mm)
     tip=cq.Solid.makeCylinder(r,c.slider_height_mm,cq.Vector(x,y+c.lever_radius_mm,z))
     arm=arm.fuse(tip)
     hub=cq.Solid.makeCylinder(c.actuation.handle_radius_mm,c.slider_height_mm,cq.Vector(x,y,z))
@@ -101,12 +105,14 @@ def slider(c,displacement):
     if not math.isfinite(displacement) or abs(displacement)>c.stroke_mm+1e-8:
         raise ValueError("selector outside stroke")
     z=c.drive_z_mm
-    y=c.follower_y_mm+c.pad_length_mm/2-1.5
+    low_y=c.contact.pivot_y_mm+c.lever_radius_mm*math.cos(math.radians(c.contact.full_release_deg))-c.contact_edge_margin_mm
+    high_y=c.follower_y_mm+c.pad_length_mm+c.slider_width_mm/2
+    y=(low_y+high_y)/2
     # Crossbar is outside the swept lever tips. Pushers are on the inner sides.
     cross=box_at(0,c.follower_y_mm+c.pad_length_mm,z,2*c.half_span_mm,c.slider_width_mm,c.slider_height_mm)
     for sign in (-1,1):
         x=sign*(c.half_span_mm-c.follower_radius_mm-c.neutral_gap_mm-c.pusher_width_mm/2)
-        pad=box_at(x,y,z,c.pusher_width_mm,c.pad_length_mm+c.slider_width_mm+3.,c.slider_height_mm)
+        pad=box_at(x,y,z,c.pusher_width_mm,high_y-low_y,c.slider_height_mm)
         cross=cross.fuse(pad)
     for x in (-c.stroke_mm,0.,c.stroke_mm):
         cross=cross.cut(cq.Solid.makeCylinder((c.index_pin_diameter_mm+c.index_pin_clearance_mm)/2,

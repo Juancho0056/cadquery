@@ -1,3 +1,3 @@
 # Estado
-Línea base verificada: 89 pruebas y auditoría coaxial PASS (641e067). El run 45747819096 del commit 484b4c5 estaba en ejecución al iniciar esta intervención.
-Se añade indexación positiva manual A/B/C a la corredera existente: tres orificios, pasador y guía en techo; cuatro pruebas escritas. P04 parcial, no detente automático ni retención propia. P01/P02/P05/P07 parciales; P03/P06 pendientes. Resultado exacto del nuevo commit pendiente. No apto para carga.
+Commit 5895dd9: 103 PASS, auditoría común FAIL (run 45747916636, artefacto 15084390966). Interferencias simétricas A/C de 21.130436 mm³; B sin defecto.
+Corrección publicada: palanca más estrecha y borde de empujador ajustado; comprobación local aislada de 21 poses PASS, 4 pruebas nuevas exactas y auditoría de CI pendientes. Ver ADR-0017. P01/P02/P04/P05/P07 parciales; P03 retorno y P06 brazo pendientes. No apto para carga.

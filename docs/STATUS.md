@@ -1,2 +1,2 @@
 # V4
-Base f7bef44: 28/28 local, ocho warnings. 1723bab corrige auditoría de volumen; validación estricta no confirmada. Offset axial parametrizado 0..15.4 mm, default preservado, exportación y estudio angular de mallas integradas. 12 pruebas nuevas por ejecutar. No se afirma mejora de recorrido ni alineación certificada. No apto para carga.
+Base 0ab26de: 45/45 PASS local en 77.95 s sin warnings reportados. Se incorpora cribado geométrico de secciones resistentes de cuellos CAD y seis pruebas. No cambia geometría ni se selecciona offset final. FEA, extensión completa, hardware y resistencia física no acreditados. No apto para carga.

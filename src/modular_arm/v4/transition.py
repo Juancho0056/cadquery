@@ -38,6 +38,33 @@ def rounded_wire(x,w,h,z,r):
                    cq.Edge.makeThreePointArc(a[2*i+1],mid[i],a[(2*i+2)%8])])
     return cq.Wire.assembleEdges(es)
 
+def roof_height(x,axis_z,reinforcement):
+    """Bounded smoothstep roof, flat at both ends of each interval."""
+    knots=((24.,26.4),(32.,26.4+reinforcement),
+           (46.,axis_z+13.94),(48.,axis_z+13.94))
+    if x<=knots[0][0]:
+        return knots[0][1]
+    for (a,u),(b,v) in zip(knots,knots[1:]):
+        if x<=b:
+            q=(x-a)/(b-a)
+            return u+(v-u)*q*q*(3-2*q)
+    return knots[-1][1]
+
+def roof_envelope(axis_z,reinforcement):
+    """Extruded XZ silhouette, exact cubic segments without spline overshoot."""
+    knots=((-30.,26.4),(24.,26.4),(32.,26.4+reinforcement),
+           (46.,axis_z+13.94),(49.,axis_z+13.94))
+    def p(x,z):
+        return V(x,-50,z)
+    es=[]
+    for (a,u),(b,v) in zip(knots,knots[1:]):
+        d=(b-a)/3
+        es.append(cq.Edge.makeBezier([p(a,u),p(a+d,u),p(b-d,v),p(b,v)]))
+    es.extend([cq.Edge.makeLine(p(49,knots[-1][1]),p(49,-30)),
+               cq.Edge.makeLine(p(49,-30),p(-30,-30)),
+               cq.Edge.makeLine(p(-30,-30),p(-30,26.4))])
+    return cq.Solid.extrudeLinear(cq.Wire.assembleEdges(es),[],V(0,100,0))
+
 def outer_blank(index, *, axis_z=None, reinforcement=0.):
     """Build the exterior before any journal, gear or retainer cuts."""
     if index not in (1,5):
@@ -60,15 +87,18 @@ def outer_blank(index, *, axis_z=None, reinforcement=0.):
            profile(44,.95),profile(46,1),profile(48,1)]
     start=28.
     if reinforcement:
-        # Rebuild the transverse envelope, not an attachment to the old neck.
-        # Additional height is biased upward; lower nominal profiles remain.
-        def reinforced(x,t,lift):
-            extra=reinforcement*lift
-            return rounded_wire(x,22+(13.94-22)*t,h0+(13.94-h0)*t+extra/2,
-                                z0+(z_end-z0)*t+extra/2,.5+(13.90-.5)*t)
-        wires=[reinforced(x,t,lift) for x,t,lift in (
-            (23,0,0),(24,0,0),(26,0,.45),(28,0,1),
-            (32,.12,1),(38,.55,.5),(44,.95,0),(46,1,0),(48,1,0))]
+        # Distribute height over a longer span. The exact roof envelope
+        # below clips interpolation overshoot rather than trusting loft knots.
+        def reinforced(x,t):
+            bottom_z=z0+(z_end-z0)*t-(h0+(13.94-h0)*t)
+            upper_z=roof_height(x,z_end,reinforcement)
+            h=(upper_z-bottom_z)/2
+            r=min(.5+(13.90-.5)*t,h-.04)
+            return rounded_wire(x,22+(13.94-22)*t,h,
+                                (upper_z+bottom_z)/2,r)
+        wires=[reinforced(x,t) for x,t in (
+            (23,0),(24,0),(26,0),(28,0),(30,.05),(32,.12),
+            (35,.30),(38,.55),(41,.78),(44,.95),(46,1),(48,1))]
         start=24.
     env=cq.Solid.makeLoft(wires,ruled=False)
     # Keep the exact disc height inside x=28. The envelope beyond it
@@ -76,6 +106,8 @@ def outer_blank(index, *, axis_z=None, reinforcement=0.):
     env=env.cut(cq.Solid.makeBox(100,200,200,V(start-100,-100,-100)))
     slab=cq.Solid.makeBox(58,100,top-bottom,V(-30,-50,bottom))
     s=plan().intersect(slab.fuse(env)).clean()
+    if reinforcement:
+        s=s.intersect(roof_envelope(z_end,reinforcement)).clean()
     if index==1:
         s=s.rotate((0,0,0),(0,0,1),180)
     if not s.isValid() or len(s.Solids())!=1:

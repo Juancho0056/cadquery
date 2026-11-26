@@ -1,3 +1,3 @@
 # Estado
-Base exacta: 138 passed in 154.41s, CI success, SHA f70bd80, run 45850678294; 14 poses completas de avance verificadas.
-Se modifica la extensión existente a sección distal abierta de 24×18 mm con paredes de 3 mm, conservando el solape y tornillería. Tres pruebas nuevas, regresión completa y auditorías pendientes. Optimización estructural preliminar, no certificación. Agarradera, base, múltiples articulaciones, trayectoria continua y validación física pendientes. No apto para carga.
+Base exacta: 141 passed in 151.53s, CI success, SHA 7720e8b, run 45859223664.
+Se incorpora ensamblaje serial de dos cartuchos reutilizados, puente desmontable y cuatro fijaciones nominales M6. Cuatro pruebas nuevas, resultado pendiente. Se conserva el cartucho individual y extensiones en U. Pendientes: optimización del puente, garra 130 mm, base para mesa/tubo, exportación, montaje y validación física. No apto para carga.

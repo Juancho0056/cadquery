@@ -1,2 +1,2 @@
 # V4
-f7bef44: usuario certifica 28/28 pruebas locales (71.92 s, 8 warnings trimesh). Integración A/B y preservación aprobadas en posiciones ensayadas. Auditoría de volumen sin centro de masa añadida; tres pruebas nuevas, por ejecutar localmente con warnings como errores. Plegado 135/180 colisiona; extensión completa, hardware y resistencia no acreditados. No apto para carga.
+Base f7bef44: 28/28 local, ocho warnings. 1723bab corrige auditoría de volumen; validación estricta no confirmada. Offset axial parametrizado 0..15.4 mm, default preservado, exportación y estudio angular de mallas integradas. 12 pruebas nuevas por ejecutar. No se afirma mejora de recorrido ni alineación certificada. No apto para carga.

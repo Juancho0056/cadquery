@@ -59,33 +59,33 @@ def crop_terminal(m,index):
     b=tm.creation.box(extents=hi-lo,transform=tm.transformations.translation_matrix((lo+hi)/2))
     return require_solid(tm.boolean.intersection([m,b],engine="manifold"),"cropped original")
 
-def align_body(m,index):
+def align_body(m,index,*,axis_z=None):
     m=m.copy()
     cx,cy=CENTERS[index]
     m.apply_translation((-cx,-cy,-CUTS[index]))
     # Original +Z maps to +X, transverse X maps to -Z.
     m.apply_transform(np.array([[0,0,1,0],[0,1,0,0],[-1,0,0,0],[0,0,0,1]],dtype=float))
-    m.apply_translation((-JOIN_X if index==1 else JOIN_X,0,CENTER_Z[index]))
+    m.apply_translation((-JOIN_X if index==1 else JOIN_X,0,CENTER_Z[index] if axis_z is None else axis_z))
     return m
 
-def joint_half(index):
+def joint_half(index,*,axis_z=None):
     """Construct exterior first; reuse the canonical V4 machining operations."""
     from modular_arm.v4.transition import finished_half
-    result=finished_half(index)
+    result=finished_half(index,axis_z=axis_z)
     if not result.isValid() or len(result.Solids())!=1:
         raise ValueError("invalid integrated CAD half")
     return result
 
-def joining_half(index):
+def joining_half(index,*,axis_z=None):
     """Keep exterior up to the cut; use a buried spigot to avoid near-coincident skins."""
-    s=joint_half(index)
+    s=joint_half(index,axis_z=axis_z)
     direction=-1 if index==1 else 1
     # The measured original section is solid near the cut. The smaller
     # spigot deliberately stays well inside that section, not on its skin.
     start=direction*(JOIN_X-.5)
     cut=cq.Solid.makeBox(100,200,200,cq.Vector(JOIN_X if index==5 else -JOIN_X-100,-100,-100))
     s=s.cut(cut)
-    spigot=cq.Solid.makeCylinder(11.,2.,cq.Vector(start,0,CENTER_Z[index]),cq.Vector(direction,0,0))
+    spigot=cq.Solid.makeCylinder(11.,2.,cq.Vector(start,0,CENTER_Z[index] if axis_z is None else axis_z),cq.Vector(direction,0,0))
     s=s.fuse(spigot).clean()
     if not s.isValid() or len(s.Solids())!=1:
         raise ValueError("invalid joining half")
@@ -115,11 +115,11 @@ def preservation_report(original,integrated,index):
     return {"added_mm3":0. if added.is_empty else abs(float(added.volume)),
             "removed_mm3":0. if removed.is_empty else abs(float(removed.volume))}
 
-def integrated_half(archive,index):
+def integrated_half(archive,index,*,axis_z=None):
     """Boolean fuse, never concatenate disconnected shells or silently fall back."""
     tm=mesh_library()
-    body=align_body(crop_terminal(original_mesh(archive,index),index),index)
-    half=cad_mesh(joining_half(index))
+    body=align_body(crop_terminal(original_mesh(archive,index),index),index,axis_z=axis_z)
+    half=cad_mesh(joining_half(index,axis_z=axis_z))
     overlap=tm.boolean.intersection([body,half],engine="manifold")
     if overlap.is_empty or overlap.volume<=1:
         raise ValueError("insufficient overlap for integral union")
@@ -135,14 +135,20 @@ def integrated_half(archive,index):
         raise ValueError(f"original longitudinal body modified: {report}")
     return result
 
-def parts(archive,angle=0.,travel=0.):
+def axis_heights(offset=15.4):
+    if not math.isfinite(offset) or not 0<=offset<=15.4:
+        raise ValueError("offset must be between 0 and 15.4 mm")
+    return {1:11.7-offset/2,5:11.7+offset/2}
+
+def parts(archive,angle=0.,travel=0.,*,offset=15.4):
     if not math.isfinite(angle):
         raise ValueError("invalid angle")
     # Retain original indexing and travel contract.
     base=joint.parts(angle,travel)
     tm=mesh_library()
-    a=integrated_half(archive,1)
-    b=integrated_half(archive,5)
+    heights=axis_heights(offset)
+    a=integrated_half(archive,1,axis_z=heights[1])
+    b=integrated_half(archive,5,axis_z=heights[5])
     b.apply_transform(tm.transformations.rotation_matrix(math.radians(angle),(0,0,1)))
     return {"arm_a_integrated":a,"arm_b_integrated":b,
             **{n:cad_mesh(s) for n,s in base.items() if n not in ("arm_a","arm_b")}}
@@ -182,13 +188,13 @@ def audit(parts):
 
 PRINTABLE=("arm_a_integrated","arm_b_integrated","button")
 
-def export(archive,destination,angle=0.,travel=0.):
-    p=parts(archive,angle,travel)
+def export(archive,destination,angle=0.,travel=0.,*,offset=15.4):
+    p=parts(archive,angle,travel,offset=offset)
     defects=audit(p)
     if defects:
         raise ValueError(f"interference mm3: {defects}")
     # Export neutral individual parts rather than the operating pose.
-    neutral=parts(archive,0.,0.) if (angle,travel)!=(0.,0.) else p
+    neutral=parts(archive,0.,0.,offset=offset) if (angle,travel)!=(0.,0.) else p
     dest=Path(destination)
     printable=dest/"prototype_printable"
     assembly=dest/"assembly_preview"
@@ -204,7 +210,7 @@ def export(archive,destination,angle=0.,travel=0.):
               "printable":list(PRINTABLE),
               "metal_hardware":[{"item":"radial retainer","quantity":3,"spec":"nominal M3 dog-point; exact length and thread pending"},
                                 {"item":"compression spring","quantity":1,"spec":"OD 18 mm envelope; installed 13 mm, compressed 6 mm; commercial part pending"}],
-              "assembly_pose":{"angle":angle,"travel":travel},
+              "assembly_pose":{"angle":angle,"travel":travel,"axis_offset_mm":offset},
               "notes":"Only prototype_printable contains candidate printed parts. Assembly preview is not a print plate. Spring not exported as a solid. Printing orientation not qualified."}
     (dest/"manifest.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
     return p

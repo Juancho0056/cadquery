@@ -38,11 +38,15 @@ def rounded_wire(x,w,h,z,r):
                    cq.Edge.makeThreePointArc(a[2*i+1],mid[i],a[(2*i+2)%8])])
     return cq.Wire.assembleEdges(es)
 
-def outer_blank(index):
+def outer_blank(index, *, axis_z=None):
     """Build the exterior before any journal, gear or retainer cuts."""
     if index not in (1,5):
         raise ValueError("unsupported reference body")
     bottom,top,z_end=(-10.,12.,4.) if index==1 else (12.4,26.4,19.4)
+    if axis_z is not None:
+        if not math.isfinite(axis_z) or not 4.<=axis_z<=19.4:
+            raise ValueError('unsupported terminal axis height')
+        z_end=axis_z
     z0=(bottom+top)/2
     h0=(top-bottom)/2
     def profile(x,t):
@@ -62,7 +66,7 @@ def outer_blank(index):
         raise ValueError("invalid integral outer blank")
     return s
 
-def finished_half(index):
+def finished_half(index, *, axis_z=None):
     from modular_arm.v4 import joint
-    b=outer_blank(index)
+    b=outer_blank(index,axis_z=axis_z)
     return joint.fixed(b) if index==1 else joint.moving(b)

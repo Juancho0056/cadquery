@@ -17,6 +17,9 @@ class CommonSelectorConfig:
     return_config: ReturnConfig = field(default_factory=ReturnConfig)
     return_radius_mm: float = 12.0
     return_post_radius_mm: float = 1.5
+    return_retainer_diameter_mm: float = 2.0
+    return_retainer_clearance_mm: float = 0.3
+    return_retainer_gap_mm: float = 0.3
     lever_radius_mm: float = 16.0
     follower_radius_mm: float = 2.0
     lever_arm_width_mm: float = 2.4
@@ -221,17 +224,40 @@ def return_components(c, reverse, angle):
                   c.drive_z_mm+c.slider_height_mm-.2))
     # Open-top socket, assembled vertically; root remains replaceable.
     width=4*r.width_mm
+    extra=c.return_retainer_gap_mm+c.return_retainer_diameter_mm+1.5
     socket=box_at(root_x,root_y-r.anchor_length_mm/2,c.top_z_mm,
-        width+4.,r.anchor_length_mm+4.,z+r.height_mm-c.top_z_mm)
+        width+4.,r.anchor_length_mm+4.,z+r.height_mm+extra-c.top_z_mm)
     pocket=box_at(root_x,root_y-r.anchor_length_mm/2,z,
-        width+r.mounting_clearance_mm,r.anchor_length_mm+r.mounting_clearance_mm,r.height_mm+1.)
+        width+r.mounting_clearance_mm,r.anchor_length_mm+r.mounting_clearance_mm,r.height_mm+extra+1.)
     socket=socket.cut(pocket)
     # Open the exit of the leaf, preserving side walls of the root seat.
-    exit_slot=box_at(root_x,root_y+1.,z,width+r.mounting_clearance_mm,4.,r.height_mm+1.)
+    exit_slot=box_at(root_x,root_y+1.,z,r.width_mm+r.mounting_clearance_mm,4.,r.height_mm+extra+1.)
     socket=socket.cut(exit_slot)
+    pin_z=z+r.height_mm+c.return_retainer_gap_mm+c.return_retainer_diameter_mm/2
+    socket=socket.cut(cq.Solid.makeCylinder((c.return_retainer_diameter_mm+c.return_retainer_clearance_mm)/2,
+        width+6.,cq.Vector(root_x-width/2-3.,root_y-r.anchor_length_mm/2,pin_z),cq.Vector(1,0,0)))
     if reverse:
         return tuple(p.mirror("YZ") for p in (leaf,post,socket))
     return leaf,post,socket
+
+
+def return_retainer_parts(c,reverse=False):
+    from modular_arm.mechanisms.retention import KeeperConfig,keeper_parts
+    r=c.return_config
+    width=4*r.width_mm+4.
+    x=c.half_span_mm+c.return_post_radius_mm+r.width_mm/2-r.preload_mm
+    y=c.contact.pivot_y_mm+c.return_radius_mm-r.length_mm-r.anchor_length_mm/2
+    z=c.drive_z_mm+c.slider_height_mm+c.rail_clearance_mm+r.height_mm+c.return_retainer_gap_mm+c.return_retainer_diameter_mm/2
+    d=c.return_retainer_diameter_mm
+    k=KeeperConfig(pin_diameter_mm=d,head_diameter_mm=2*d,head_thickness_mm=1.5,
+        shaft_length_mm=width+3.,groove_center_mm=1.5+width+1.5,
+        groove_diameter_mm=.7*d,groove_width_mm=1.2,clip_inner_diameter_mm=.8*d,
+        clip_outer_diameter_mm=2*d,clip_thickness_mm=.8,clip_mouth_mm=.6*d)
+    parts={}
+    for name,p in keeper_parts(k).items():
+        p=p.rotate((0,0,0),(0,1,0),90).translate(cq.Vector(x-width/2-1.5,y,z))
+        parts[name]=p.mirror("YZ") if reverse else p
+    return parts
 
 
 def install_returns(c,parts,mode):
@@ -242,3 +268,5 @@ def install_returns(c,parts,mode):
         parts[name+"_actuator"]=parts[name+"_actuator"].fuse(post)
         parts["lid"]=parts["lid"].fuse(socket)
         parts[name+"_return_leaf"]=leaf
+        for key,shape in return_retainer_parts(c,reverse).items():
+            parts[name+"_return_retainer_"+key]=shape

@@ -38,7 +38,9 @@ def return_leaf(c,*,deflection=0.):
     for sign,indices in ((-1,range(25)),(1,range(24,-1,-1))):
         for i in indices:
             u=i/24
-            x=deflection*u*u*(3-2*u)
+            # Straight terminal contact land; avoid a sloped final polygon edge.
+            t=min(i/22,1.)
+            x=deflection*t*t*(3-2*t)
             pts.append((x+sign*c.width_mm/2,c.length_mm*u))
     leaf=cq.Workplane("XY").polyline(pts).close().extrude(c.height_mm)
     root=cq.Workplane("XY").box(4*c.width_mm,c.anchor_length_mm,c.height_mm,

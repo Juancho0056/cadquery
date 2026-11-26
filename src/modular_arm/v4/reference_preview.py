@@ -72,11 +72,15 @@ def write_stl(path,triangles):
         f.write(struct.pack("<I",len(t)))
         f.write(records.tobytes())
 
-def export_preview(archive,destination,angle=0.,travel=0.):
+def export_preview(archive,destination,angle=0.,travel=0.,*,rigid=False):
     dest=Path(destination)
     dest.mkdir(parents=True,exist_ok=True)
     paths=[]
-    for name,shape in parts(angle,travel).items():
+    if rigid:
+        from modular_arm.v4.rigid_ends import parts as build_parts
+    else:
+        build_parts=parts
+    for name,shape in build_parts(angle,travel).items():
         path=dest/(name+".stl")
         shape.exportStl(str(path),tolerance=.1,angularTolerance=.1)
         paths.append(path)

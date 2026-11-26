@@ -1,3 +1,2 @@
 # Estado
-Línea base verificada: 107 pruebas y CI success, SHA 78d3079, run 45808634657. El commit 5f82cc2 de hoja paramétrica estaba en ejecución al iniciar esta intervención.
-P03: dos retornos geométricamente instalados sobre tapa, postes y alojamientos reemplazables abiertos. Dos pruebas parametrizadas nuevas y auditoría común obligatoria. No se acredita fuerza, retorno automático ni captura vertical. P01/P04/P05/P07 parciales; P02 contacto previo verificado; P06 pendiente. No apto para carga.
+SHA 5f82cc2: 113 pruebas PASS, run 45809303761. SHA 591ef93: 113 PASS, 2 FAIL y auditoría FAIL, run 45809456368. Evidencia y corrección de tangencia en ADR-0020. P03 instalado pero no validado; P01/P04/P05/P07 parciales, P02 contacto previo validado, P06 pendiente. No apto para carga.

@@ -33,4 +33,4 @@ for i,(name,part) in enumerate(common_selector_parts(mode=MODE,index_inserted=IN
         continue
     if EXPLODED:
         part=part.translate(cq.Vector(0,0,i*10))
-    show_object(part,name=name,options={"color":colors.get(name,(.25,.55,.85) if "actuator" in name else (.7,.76,.81))})
+    show_object(part,name=name,options={"color":colors.get(name,(.15,.65,.55) if "return_leaf" in name else (.25,.55,.85) if "actuator" in name else (.7,.76,.81))})

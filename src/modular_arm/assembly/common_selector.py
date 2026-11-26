@@ -8,11 +8,15 @@ import math
 import cadquery as cq
 from modular_arm.assembly.manual_actuation import ActuationConfig, manual_parts
 from modular_arm.mechanisms.selector_contract import Mode
+from modular_arm.mechanisms.installed_return import ReturnConfig, return_leaf
 
 
 @dataclass(frozen=True, slots=True)
 class CommonSelectorConfig:
     actuation: ActuationConfig = field(default_factory=ActuationConfig)
+    return_config: ReturnConfig = field(default_factory=ReturnConfig)
+    return_radius_mm: float = 12.0
+    return_post_radius_mm: float = 1.5
     lever_radius_mm: float = 16.0
     follower_radius_mm: float = 2.0
     lever_arm_width_mm: float = 2.4
@@ -36,7 +40,7 @@ class CommonSelectorConfig:
 
     def __post_init__(self):
         for name in self.__dataclass_fields__:
-            if name != "actuation":
+            if name not in ("actuation","return_config"):
                 v = getattr(self, name)
                 if not math.isfinite(v) or v <= 0:
                     raise ValueError(name)
@@ -191,4 +195,50 @@ def common_selector_parts(c=None,mode=Mode.B,*,index_inserted=True):
     for name,shape in keeper_parts(k).items():
         parts["angular_lock_"+name]=shape.rotate((0,0,0),(1,0,0),180).translate(
             cq.Vector(-p.lock_radius_mm,0,c.top_z_mm+p.lock_head_thickness_mm))
+    install_returns(c,parts,mode)
     return parts
+
+
+def return_components(c, reverse, angle):
+    """Prescribed installed shape with nominal tangent contact at free end."""
+    r=c.return_config
+    z=c.drive_z_mm+c.slider_height_mm+c.rail_clearance_mm
+    x=c.half_span_mm
+    y=c.contact.pivot_y_mm
+    radius=c.return_radius_mm
+    q=math.radians(angle)
+    root_x=x+c.return_post_radius_mm+r.width_mm/2-r.preload_mm
+    root_y=y+radius-r.length_mm
+    d=r.preload_mm+radius*math.sin(q)
+    # Shorten projected Y span as follower moves along its circular path.
+    # This is a geometric approximation, not an elastic strain solution.
+    from dataclasses import replace
+    posed=replace(r,length_mm=r.length_mm-radius*(1-math.cos(q)))
+    leaf=return_leaf(posed,deflection=d).translate(cq.Vector(root_x,root_y,z))
+    post=cq.Solid.makeCylinder(c.return_post_radius_mm,
+        c.rail_clearance_mm+r.height_mm+.2,
+        cq.Vector(x+radius*math.sin(q),y+radius*math.cos(q),
+                  c.drive_z_mm+c.slider_height_mm-.2))
+    # Open-top socket, assembled vertically; root remains replaceable.
+    width=4*r.width_mm
+    socket=box_at(root_x,root_y-r.anchor_length_mm/2,c.top_z_mm,
+        width+4.,r.anchor_length_mm+4.,z+r.height_mm-c.top_z_mm)
+    pocket=box_at(root_x,root_y-r.anchor_length_mm/2,z,
+        width+r.mounting_clearance_mm,r.anchor_length_mm+r.mounting_clearance_mm,r.height_mm+1.)
+    socket=socket.cut(pocket)
+    # Open the exit of the leaf, preserving side walls of the root seat.
+    exit_slot=box_at(root_x,root_y+1.,z,width+r.mounting_clearance_mm,4.,r.height_mm+1.)
+    socket=socket.cut(exit_slot)
+    if reverse:
+        return tuple(p.mirror("YZ") for p in (leaf,post,socket))
+    return leaf,post,socket
+
+
+def install_returns(c,parts,mode):
+    q=c.contact.full_release_deg
+    for name,reverse,angle in (("lower",False,q if mode is Mode.A else 0.),
+                               ("upper",True,q if mode is Mode.C else 0.)):
+        leaf,post,socket=return_components(c,reverse,angle)
+        parts[name+"_actuator"]=parts[name+"_actuator"].fuse(post)
+        parts["lid"]=parts["lid"].fuse(socket)
+        parts[name+"_return_leaf"]=leaf

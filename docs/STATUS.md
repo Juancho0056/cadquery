@@ -1,3 +1,3 @@
 # Estado
-Base exacta: 129 passed in 70.35s, CI success, SHA b7f8ba4, run 45815389909.
-Se incorporan topes físicos experimentales de recorrido, extensiones desmontables y tornillería nominal. Cinco pruebas nuevas y visualización integrada; resultado pendiente. Topes y extensiones no certificados. Trayectoria continua del trinquete, montaje, fuerza de retorno, fatiga, rigidez y capacidad de carga pendientes. No apto para carga.
+Base exacta: 134 passed in 83.49s, CI success, SHA 5e32255, run 45815881389. Topes físicos y extensiones verificados geométricamente.
+Se incorpora retracción prescrita de uña activa coordinada con actuador y retorno; auditoría de 14 poses completas en ambos sentidos, cuatro pruebas nuevas. CI exacto pendiente. Trayectoria continua, montaje, optimización estructural, agarradera y múltiples articulaciones pendientes. No apto para carga.

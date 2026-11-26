@@ -73,12 +73,20 @@ def actuator_geometry(c,reverse=False,release=0.):
         cq.Vector(x,y,top-c.key_depth_mm-1)))
     return core.rotate((x,y,0),(x,y,1),release if reverse else -release)
 
-def manual_parts(c=None,mode=Mode.B):
+def manual_parts(c=None,mode=Mode.B,*,active_release=0.):
     c=c or ActuationConfig()
     e=c.enclosure
     p=e.contact
     a=p.joint.cartridge
     lower,upper=release_commands(c,mode)
+    if not math.isfinite(active_release) or not 0<=active_release<=p.full_release_deg:
+        raise ValueError('invalid active release')
+    if mode is Mode.B and active_release:
+        raise ValueError('neutral does not prescribe active release')
+    if mode is Mode.A:
+        upper=active_release
+    elif mode is Mode.C:
+        lower=active_release
     parts=serviceable_parts(e,angle_deg=0.,lower_release=lower,upper_release=upper,lock_inserted=True)
     # Only provide a geometry proposal. The lower actuator passes through the upper
     # track plane; compatibility is explicitly checked by the interference harness.

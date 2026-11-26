@@ -164,15 +164,17 @@ def index_pin(c):
     return shaft.fuse(head)
 
 
-def common_selector_parts(c=None,mode=Mode.B,*,index_inserted=True,include_arms=False,lock_inserted=True,rotor_angle=0.,include_stops=False,include_extensions=False):
+def common_selector_parts(c=None,mode=Mode.B,*,index_inserted=True,include_arms=False,lock_inserted=True,rotor_angle=0.,include_stops=False,include_extensions=False,active_release=0.):
     c=c or CommonSelectorConfig()
     if not math.isfinite(rotor_angle):
         raise ValueError('nonfinite rotor angle')
     if lock_inserted and abs(rotor_angle/c.contact.track.ring.pitch_degrees-round(rotor_angle/c.contact.track.ring.pitch_degrees))>1e-8:
         raise ValueError('angular lock requires indexed rotor position')
-    parts=manual_parts(c.actuation,mode)
+    if lock_inserted and active_release:
+        raise ValueError('remove angular lock before prescribing active release')
+    parts=manual_parts(c.actuation,mode,active_release=active_release)
     q=c.contact.full_release_deg
-    for name,reverse,angle in (("lower",False,q if mode is Mode.A else 0.),("upper",True,q if mode is Mode.C else 0.)):
+    for name,reverse,angle in (("lower",False,q if mode is Mode.A else active_release if mode is Mode.C else 0.),("upper",True,q if mode is Mode.C else active_release if mode is Mode.A else 0.)):
         parts[name+"_actuator"]=parts[name+"_actuator"].fuse(lever(c,reverse,angle))
     bottom,outer=guide_parts(c)
     # Mounting tongue extends from lid toward guide platform.
@@ -202,7 +204,7 @@ def common_selector_parts(c=None,mode=Mode.B,*,index_inserted=True,include_arms=
     for name,shape in (keeper_parts(k).items() if lock_inserted else ()):
         parts["angular_lock_"+name]=shape.rotate((0,0,0),(1,0,0),180).translate(
             cq.Vector(-p.lock_radius_mm,0,c.top_z_mm+p.lock_head_thickness_mm))
-    install_returns(c,parts,mode)
+    install_returns(c,parts,mode,active_release=active_release)
     if include_arms:
         from modular_arm.assembly.arm_interfaces import attach_arm_interfaces
         attach_arm_interfaces(c,parts)
@@ -279,10 +281,10 @@ def return_retainer_parts(c,reverse=False):
     return parts
 
 
-def install_returns(c,parts,mode):
+def install_returns(c,parts,mode,*,active_release=0.):
     q=c.contact.full_release_deg
-    for name,reverse,angle in (("lower",False,q if mode is Mode.A else 0.),
-                               ("upper",True,q if mode is Mode.C else 0.)):
+    for name,reverse,angle in (("lower",False,q if mode is Mode.A else active_release if mode is Mode.C else 0.),
+                               ("upper",True,q if mode is Mode.C else active_release if mode is Mode.A else 0.)):
         leaf,post,socket=return_components(c,reverse,angle)
         parts[name+"_actuator"]=parts[name+"_actuator"].fuse(post)
         parts["lid"]=parts["lid"].fuse(socket)

@@ -13,6 +13,9 @@ class SegmentConfig:
     overlap_mm: float=45.
     plate_thickness_mm: float=8.
     plate_width_mm: float=24.
+    distal_height_mm: float=18.
+    distal_wall_mm: float=3.
+    distal_end_wall_mm: float=5.
     bolt_diameter_mm: float=6.
     bolt_head_diameter_mm: float=10.
     bolt_head_height_mm: float=4.
@@ -26,6 +29,10 @@ class SegmentConfig:
             raise ValueError("positive finite dimensions required")
         if self.extension_length_mm<=self.overlap_mm or self.bolt_head_diameter_mm<=self.bolt_diameter_mm:
             raise ValueError("invalid segment or fastener")
+        if 2*self.distal_wall_mm>=min(self.plate_width_mm,self.distal_height_mm) or self.distal_height_mm<=self.plate_thickness_mm:
+            raise ValueError('invalid hollow section')
+        if 2*self.distal_end_wall_mm>=self.extension_length_mm-self.overlap_mm:
+            raise ValueError('invalid end walls')
 
 
 def interface_z(c,a):
@@ -72,6 +79,17 @@ def extension_parts(c,a=None,m=None):
     for prefix,reverse in (("fixed",False),("moving",True)):
         plate=(cq.Workplane("XY").box(m.extension_length_mm,m.plate_width_mm,m.plate_thickness_mm,
               centered=(False,True,False)).translate((start,0,z+a.thickness_mm)).val())
+        # Preserve the original bolted lap; increase distal section depth.
+        # Open-top U-channel with solid ends, printable without a closed roof.
+        end=a.reach_mm+m.extension_length_mm-m.overlap_mm
+        base_z=z+a.thickness_mm
+        distal=(cq.Workplane("XY").box(end-a.reach_mm+1.,m.plate_width_mm,m.distal_height_mm,
+            centered=(False,True,False)).translate((a.reach_mm-1.,0,base_z)).val())
+        plate=plate.fuse(distal)
+        inner=(cq.Workplane("XY").box(end-a.reach_mm-2*m.distal_end_wall_mm,
+            m.plate_width_mm-2*m.distal_wall_mm,m.distal_height_mm,
+            centered=(False,True,False)).translate((a.reach_mm+m.distal_end_wall_mm,0,base_z+m.distal_wall_mm)).val())
+        plate=plate.cut(inner)
         for i,x in enumerate(a.mounting_centers_mm):
             hole=cq.Solid.makeCylinder(a.mounting_hole_mm/2,m.plate_thickness_mm,cq.Vector(x,0,z+a.thickness_mm))
             plate=plate.cut(hole)

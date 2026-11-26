@@ -1,2 +1,2 @@
 # Estado V3
-Banco retenido c96dcb4 visualizado por usuario; CI 45873560214 en curso al comenzar. Topes superior e inferior integrados, camisa ensanchada para fijaciones, ocho pruebas adicionales. Pendientes CI exacto, selección del resorte, fijaciones reales, montaje, conexión estructural del rotor y resistencia. No apto para carga.
+Base 3c0ea6b: 262/262 PASS, run 45873950736. Se añade retorno helicoidal ilustrativo, envolventes M3x8 y auditoría de inserción axial. Cinco pruebas nuevas escritas, CI pendiente. Resorte comercial, fijación física, montaje real, conexión estructural y resistencia todavía no acreditados. No apto para carga.

@@ -1,2 +1,2 @@
 # V4
-93104e1: evidencia local 46/46 PASS. Se añaden terminales integrales candidatos A/B a partir de medidas de obj1 y obj5, 12 pruebas nuevas escritas. No se cambia núcleo ni mecanismo original. Falta verificar acople con mallas reales, coaxialidad segunda oreja, retención física, extensión y resistencia. CI pendiente. No apto para carga.
+e9c3b30: 58/58 V4 local. Se añade vista local STL alineada de obj1/obj5 y auditoría de orificios reales. Obj5 presenta segunda oreja irregular: pasador Ø9.8 no acreditado. Tres pruebas nuevas, dos requieren ZIP local. Acople volumétrico, retención rígida, cinemática longitudinal, resistencia y exportación de fabricación no acreditados. No apto para carga.

@@ -1,0 +1,3 @@
+# ADR-0002 — Cartucho independiente de la trayectoria estructural
+Estado: propuesta de ingeniería, pendiente de ensayos.
+Usar horquilla y eje de doble apoyo para cargas radiales; corona y uñas opuestas para graduación angular; seguro positivo independiente para inmovilización. No usar flexuras del selector como elemento estructural. A: giro horario permitido, B: ambos bloqueados, C: antihorario permitido, vistos desde +Z hacia el origen. No liberar ni cambiar sentido bajo carga hasta establecer un procedimiento seguro. Diseñar primero interfaces y cupones PETG; comprobar interferencias, desgaste y fluencia. No reproducir geometría de terceros sin permisos. Dimensiones de la foundation son hipótesis.

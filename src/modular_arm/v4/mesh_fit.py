@@ -37,9 +37,60 @@ def contacts(a,b):
     f.Update()
     return f.GetNumberOfContacts()
 
+def enclosed_vertices(a,b,tolerance=0.0001):
+    """Count sampled mesh vertices strictly inside the other closed surface.
+    Near-surface points are excluded to avoid classifying contact as containment.
+    """
+    selector=vtk.vtkSelectEnclosedPoints()
+    selector.SetInputData(a)
+    selector.SetSurfaceData(b)
+    selector.SetTolerance(tolerance)
+    selector.CheckSurfaceOn()
+    selector.Update()
+    flags=selector.GetOutput().GetPointData().GetArray("SelectedPoints")
+    if flags is None:
+        raise ValueError("containment check failed; check mesh closure")
+    from vtk.util.numpy_support import vtk_to_numpy
+    ids=np.flatnonzero(vtk_to_numpy(flags))
+    distance=vtk.vtkImplicitPolyDataDistance()
+    distance.SetInput(b)
+    return sum(abs(distance.EvaluateFunction(a.GetPoint(int(i))))>.02 for i in ids)
+
+def nearest_sample(a,b):
+    """Minimum vertex-to-triangle distance, upper bound on surface gap."""
+    from vtk.util.numpy_support import vtk_to_numpy
+    pts=vtk_to_numpy(a.GetPoints().GetData())
+    # Deterministic bounded sampling, include extrema; not exact minimum.
+    ids=np.unique(np.r_[np.linspace(0,len(pts)-1,min(4096,len(pts)),dtype=int),pts.argmin(0),pts.argmax(0)])
+    distance=vtk.vtkImplicitPolyDataDistance()
+    distance.SetInput(b)
+    return min(abs(distance.EvaluateFunction(pts[i])) for i in ids)
+
+def pair_report(a,b):
+    count=contacts(a,b)
+    return {"surface_contacts":count,
+            "a_vertices_inside_b":enclosed_vertices(a,b),
+            "b_vertices_inside_a":enclosed_vertices(b,a),
+            "sampled_gap_mm":min(nearest_sample(a,b),nearest_sample(b,a))}
+
 def fit_report(archive,angle=0.,travel=0.):
     p=parts(angle,travel)
     original={f"obj_{i}":polydata(aligned_triangles(archive,i,angle)) for i in (1,5)}
     generated={n:cad_mesh(s) for n,s in p.items()}
-    return [{"original":a,"cad":b,"surface_contacts":contacts(m,n)}
-            for a,m in original.items() for b,n in generated.items()]
+    result=[]
+    for a,m in original.items():
+        for b,n in generated.items():
+            row={"original":a,"cad":b,**pair_report(m,n)}
+            row["expected_mate"]=(a,b) in (("obj_1","arm_a"),("obj_5","arm_b"))
+            result.append(row)
+    result.append({"original":"obj_1","cad":"obj_5",**pair_report(original["obj_1"],original["obj_5"]),"expected_mate":False})
+    return result
+
+def failures(report):
+    result=[]
+    for row in report:
+        if any(row[k] for k in ("surface_contacts","a_vertices_inside_b","b_vertices_inside_a")):
+            result.append({"pair":[row["original"],row["cad"]],"reason":"intersection_or_containment"})
+        if row["expected_mate"] and row["sampled_gap_mm"]>1.:
+            result.append({"pair":[row["original"],row["cad"]],"reason":"mating_gap_above_screening_threshold"})
+    return result

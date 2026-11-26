@@ -164,7 +164,7 @@ def index_pin(c):
     return shaft.fuse(head)
 
 
-def common_selector_parts(c=None,mode=Mode.B,*,index_inserted=True,include_arms=False,lock_inserted=True,rotor_angle=0.):
+def common_selector_parts(c=None,mode=Mode.B,*,index_inserted=True,include_arms=False,lock_inserted=True,rotor_angle=0.,include_stops=False,include_extensions=False):
     c=c or CommonSelectorConfig()
     if not math.isfinite(rotor_angle):
         raise ValueError('nonfinite rotor angle')
@@ -206,8 +206,18 @@ def common_selector_parts(c=None,mode=Mode.B,*,index_inserted=True,include_arms=
     if include_arms:
         from modular_arm.assembly.arm_interfaces import attach_arm_interfaces
         attach_arm_interfaces(c,parts)
+    if include_stops or include_extensions:
+        if not include_arms:
+            raise ValueError("stops and extensions require arm interfaces")
+        from modular_arm.assembly.modular_segments import attach_stops, attach_extensions
+        if include_stops:
+            attach_stops(c,parts)
+        if include_extensions:
+            attach_extensions(c,parts)
     if rotor_angle:
-        parts["rotor"]=parts["rotor"].rotate((0,0,0),(0,0,1),rotor_angle)
+        for name in ("rotor","moving_extension","moving_bolt_0","moving_bolt_1","moving_nut_0","moving_nut_1"):
+            if name in parts:
+                parts[name]=parts[name].rotate((0,0,0),(0,0,1),rotor_angle)
     return parts
 
 

@@ -7,7 +7,7 @@ from modular_arm.mechanisms.selector_contract import Mode
 if __name__=="__main__":
     report=[]
     for mode in Mode:
-        parts=common_selector_parts(mode=mode,include_arms=True)
+        parts=common_selector_parts(mode=mode,include_arms=True,include_stops=True,include_extensions=True)
         defects=[]
         for name,p in parts.items():
             if not p.isValid() or len(p.Solids())!=1:

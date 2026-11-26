@@ -28,10 +28,12 @@ SHOW_LID=True
 EXPLODED=False
 INDEX_INSERTED=True
 SHOW_ARMS=True
+SHOW_STOPS=True
+SHOW_EXTENSIONS=True
 ROTOR_ANGLE=0.0
 LOCK_INSERTED=True
-colors={"housing":(.35,.43,.52),"lid":(.46,.56,.65),"rotor":(.87,.68,.23),"common_selector":(.15,.65,.55),"angular_lock":(.85,.16,.16),"angular_lock_grooved_pin":(.85,.16,.16),"selector_index_pin":(.82,.38,.12)}
-for i,(name,part) in enumerate(common_selector_parts(mode=MODE,index_inserted=INDEX_INSERTED,include_arms=SHOW_ARMS,rotor_angle=ROTOR_ANGLE,lock_inserted=LOCK_INSERTED).items()):
+colors={"housing":(.35,.43,.52),"lid":(.46,.56,.65),"rotor":(.87,.68,.23),"moving_extension":(.87,.68,.23),"fixed_extension":(.35,.43,.52),"common_selector":(.15,.65,.55),"angular_lock":(.85,.16,.16),"angular_lock_grooved_pin":(.85,.16,.16),"selector_index_pin":(.82,.38,.12)}
+for i,(name,part) in enumerate(common_selector_parts(mode=MODE,index_inserted=INDEX_INSERTED,include_arms=SHOW_ARMS,rotor_angle=ROTOR_ANGLE,lock_inserted=LOCK_INSERTED,include_stops=SHOW_ARMS and SHOW_STOPS,include_extensions=SHOW_ARMS and SHOW_EXTENSIONS).items()):
     if name=="lid" and not SHOW_LID:
         continue
     if EXPLODED:

@@ -1,3 +1,3 @@
 # Estado
-Línea base exacta: 122 passed in 47.06s, CI success, SHA 9801094, run 45810971324.
-Se añade rotación del rotor y brazo como sólido único y retiro opcional del seguro; siete pruebas nuevas escritas, incluyendo auditoría de cinco poses completas indexadas. CI pendiente. P06 interfaces integradas y verificadas en línea base; P07 ampliado. Topes físicos, segmentos modulares desmontables, trayectoria continua y resistencia pendientes. No apto para carga.
+Base exacta: 129 passed in 70.35s, CI success, SHA b7f8ba4, run 45815389909.
+Se incorporan topes físicos experimentales de recorrido, extensiones desmontables y tornillería nominal. Cinco pruebas nuevas y visualización integrada; resultado pendiente. Topes y extensiones no certificados. Trayectoria continua del trinquete, montaje, fuerza de retorno, fatiga, rigidez y capacidad de carga pendientes. No apto para carga.

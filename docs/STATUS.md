@@ -1,2 +1,2 @@
 # V4
-Rama independiente desde 95afd60. Nueva arquitectura A/B integral Ø56, dentado Ø36 ocho lóbulos y carrera 7. Tres piezas impresas principales, retención radial nominal. 42 pruebas nuevas escritas, no ejecutadas todavía. Extremos integrales sin conexión modular definitiva; resorte comercial, fijación real, resistencia y exportación pendientes. No apto para carga.
+Codo integral b560495 publicado, CI sin confirmar al inicio de intervención. Brazo original ARM_updated_stls.zip preservado. Lector local, informe de cuello Ø12 y probeta de interfaz giratoria añadidos. No es brazo telescópico ensamblado; falta identificar cinemática, retención axial y extremos de conexión. No apto para carga.

@@ -1,2 +1,2 @@
 # V4
-Codo integral b560495 publicado, CI sin confirmar al inicio de intervención. Brazo original ARM_updated_stls.zip preservado. Lector local, informe de cuello Ø12 y probeta de interfaz giratoria añadidos. No es brazo telescópico ensamblado; falta identificar cinemática, retención axial y extremos de conexión. No apto para carga.
+93104e1: evidencia local 46/46 PASS. Se añaden terminales integrales candidatos A/B a partir de medidas de obj1 y obj5, 12 pruebas nuevas escritas. No se cambia núcleo ni mecanismo original. Falta verificar acople con mallas reales, coaxialidad segunda oreja, retención física, extensión y resistencia. CI pendiente. No apto para carga.

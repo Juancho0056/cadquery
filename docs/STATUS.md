@@ -1,2 +1,2 @@
-# Estado V2
-Alcance exclusivo: uniones y codos. Retención de eje y barrido aprobados en 92de685 (45866190660). Limpieza 2813936 visualizada, CI en curso al iniciar. Nuevo pasador con hombro y tapa, ocho pruebas escritas. Tapa/guía sin fijación definida, no retorno automático ni botón. CI exacto pendiente. No apto para carga.
+# Estado V3
+Rama independiente desde V2 68a9cb3. Prototipo de embrague axial central, cuatro sólidos y volumen reservado de resorte. 27 pruebas escritas, CI pendiente. Pendientes: resolver defectos, cierre de tapa, apoyo superior y captura axial, resorte real, montaje y pruebas físicas. V1/V2 preservadas. No apto para carga.

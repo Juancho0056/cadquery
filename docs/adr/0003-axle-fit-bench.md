@@ -1,0 +1,3 @@
+# ADR-0003: banco de ajuste de eje
+Propuesta: eje Ø20 mm, cabeza Ø30 × 5 mm, dos cupones de apoyo de 15 mm, diámetro interior 20.6 mm, holgura axial 0.4 mm por lado. Corona experimental existente de 20 mm de espesor. Separación entre centros de apoyo 35.8 mm, longitud total del eje 67.8 mm. Extensión de 12 mm reservada para retención aún no diseñada.
+Se elige holgura diametral de 0.6 mm como hipótesis de fabricación PETG, no como resultado de ensayo. Los cupones separados no constituyen una horquilla y no pueden reaccionar momentos por sí solos. Prohibido usar bajo carga antes de retención positiva, unión estructural, orientación y ensayos. CQ-editor requiere paquete instalado en su entorno Python.

@@ -1,0 +1,3 @@
+# Estándar de ingeniería
+Aplicar AGENTS.md. Seguridad > estética; geometría válida no acredita carga ni función. Unidades mm, grados, N y N·m. Configuración tipada, inmutable y validada. Sin duplicación de parámetros; separar constantes de algoritmos de dimensiones físicas.
+PETG: validar orientación, anisotropía, holguras, fluencia, relajación, desgaste, fatiga, retención positiva y cambios de selector bajo carga. Factor de seguridad objetivo 3, no medido. No fabricar conjunto final sin cerrar fallos críticos. Ensayos físicos controlados sin personas ni equipos valiosos bajo la carga. No usar sobre personas sin validación apropiada.

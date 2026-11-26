@@ -1,0 +1,12 @@
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+*.egg-info/
+.venv/
+dist/
+build/
+artifacts/*
+!artifacts/.gitkeep
+references/third_party/*
+!references/third_party/.gitkeep

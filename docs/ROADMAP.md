@@ -1,0 +1,12 @@
+# Roadmap
+- [ ] 00 Foundation: configuración, corona experimental, pruebas, exportación, trazabilidad y verificación remota.
+- [ ] 01 Ingeniería inversa 3MF: licencias, inventario, cotas e interfaces.
+- [ ] 02 Cartucho: corona, uñas, selector A/B/C, seguro positivo, carcasa.
+- [ ] 03 Horquilla doble apoyo.
+- [ ] 04 Brazos 200/150/100 mm.
+- [ ] 05 Prensa y base giratoria.
+- [ ] 06 Cabezal/acople universal.
+- [ ] 07 Accesorios.
+- [ ] 08 Ensamblaje y validación.
+- [ ] 09 Placas 3MF e instrucciones.
+- [ ] 10 Ensayos físicos de carga, ciclos, fluencia y seguridad.

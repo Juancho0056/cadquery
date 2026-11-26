@@ -1,0 +1,5 @@
+# Contexto oficial
+Sistema articulado modular íntegramente imprimible en PETG con Bambu Lab A1 (256 mm por eje, boquilla 0,4 mm), CadQuery, CQ-editor, Python, Windows y Bambu Studio. Carga útil objetivo, no verificada: 1 kg. Prensa ajustable, base giratoria, tres articulaciones tipo horquilla, dos brazos, cabezal, acople común y accesorios intercambiables.
+Trinquete reversible A horario libre/B ambos bloqueados/C antihorario libre, seguro mecánico positivo independiente, uñas y carcasa reemplazables. No asumir seguridad de liberación bajo carga.
+Hipótesis: brazos entre ejes 200/150/100 mm, ancho 50 mm; articulaciones 100–110 mm, corona 70 mm exterior, 58 mm raíz, 20 mm grosor, 24 dientes a 15°, eje 20–25 mm, horquillas 15 mm por lado; prensa apertura 5–100 mm, husillo Ø26 mm con rosca trapezoidal; acople cola de milano cautivo con tope y retención; accesorio cuadrado 120×120 mm con apertura mayor de 120 mm y salida pasante del tornillo si procede. Accesorios para celular, tablet y cilindros.
+Los modelos originales no están incorporados. Verificar licencias. Funcionalidad, seguridad, ensamblabilidad y comportamiento PETG deben demostrarse.

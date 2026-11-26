@@ -1,3 +1,3 @@
 # Estado
-Línea base exacta: 119 passed in 37.82s, CI success, SHA 1b05814, run 45810301967. Retornos y retención de raíz pasan harness geométrico; no certificación elástica.
-P06: interfaces integrales fija y móvil, orificios de montaje y alcance nominal 120 mm, implementadas. Tres pruebas nuevas y auditoría común ampliada a interfaces; ejecución pendiente. P01/P04/P05/P07 parciales; P02 contacto geométrico verificado; P03 geometría aprobada, fuerza/fatiga pendientes. Recorrido de interfaz ±30° propuesto, no tope físico. No apto para carga.
+Línea base exacta: 122 passed in 47.06s, CI success, SHA 9801094, run 45810971324.
+Se añade rotación del rotor y brazo como sólido único y retiro opcional del seguro; siete pruebas nuevas escritas, incluyendo auditoría de cinco poses completas indexadas. CI pendiente. P06 interfaces integradas y verificadas en línea base; P07 ampliado. Topes físicos, segmentos modulares desmontables, trayectoria continua y resistencia pendientes. No apto para carga.

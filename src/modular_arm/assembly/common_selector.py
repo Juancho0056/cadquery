@@ -164,8 +164,12 @@ def index_pin(c):
     return shaft.fuse(head)
 
 
-def common_selector_parts(c=None,mode=Mode.B,*,index_inserted=True,include_arms=False):
+def common_selector_parts(c=None,mode=Mode.B,*,index_inserted=True,include_arms=False,lock_inserted=True,rotor_angle=0.):
     c=c or CommonSelectorConfig()
+    if not math.isfinite(rotor_angle):
+        raise ValueError('nonfinite rotor angle')
+    if lock_inserted and abs(rotor_angle/c.contact.track.ring.pitch_degrees-round(rotor_angle/c.contact.track.ring.pitch_degrees))>1e-8:
+        raise ValueError('angular lock requires indexed rotor position')
     parts=manual_parts(c.actuation,mode)
     q=c.contact.full_release_deg
     for name,reverse,angle in (("lower",False,q if mode is Mode.A else 0.),("upper",True,q if mode is Mode.C else 0.)):
@@ -195,13 +199,15 @@ def common_selector_parts(c=None,mode=Mode.B,*,index_inserted=True,include_arms=
         groove_diameter_mm=2.8,groove_width_mm=2.,clip_inner_diameter_mm=3.,
         clip_outer_diameter_mm=8.,clip_thickness_mm=1.6,clip_mouth_mm=2.2)
     del parts["angular_lock"]
-    for name,shape in keeper_parts(k).items():
+    for name,shape in (keeper_parts(k).items() if lock_inserted else ()):
         parts["angular_lock_"+name]=shape.rotate((0,0,0),(1,0,0),180).translate(
             cq.Vector(-p.lock_radius_mm,0,c.top_z_mm+p.lock_head_thickness_mm))
     install_returns(c,parts,mode)
     if include_arms:
         from modular_arm.assembly.arm_interfaces import attach_arm_interfaces
         attach_arm_interfaces(c,parts)
+    if rotor_angle:
+        parts["rotor"]=parts["rotor"].rotate((0,0,0),(0,0,1),rotor_angle)
     return parts
 
 

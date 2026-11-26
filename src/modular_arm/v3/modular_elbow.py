@@ -14,10 +14,10 @@ MOVING_Z=29.5
 def pose(shape,angle):
     return shape.rotate((0,0,0),(0,0,1),angle)
 
-def placed(shape,moving,angle=0.):
+def placed(shape,moving,angle=0.,*,mouth=MOUTH):
     if moving:
-        return pose(shape.translate(cq.Vector(MOUTH,0,MOVING_Z)),angle)
-    return pose(shape,180).translate(cq.Vector(-MOUTH,0,FIXED_Z))
+        return pose(shape.translate(cq.Vector(mouth,0,MOVING_Z)),angle)
+    return pose(shape,180).translate(cq.Vector(-mouth,0,FIXED_Z))
 
 # Groove and flush M3 retaining screw are located inside the head-side
 # socket wall, outside the nominal plug/wall shear interfaces.
@@ -66,7 +66,9 @@ def split_keeper(keeper):
         halves[name]=keeper.intersect(clip).clean()
     return halves
 
-def parts(angle=0.,travel=0.,*,connected=False):
+def parts(angle=0.,travel=0.,*,connected=False,mouth=MOUTH):
+    if not math.isfinite(mouth) or not 67<=mouth<=70:
+        raise ValueError('unsupported mouth radius; preserve socket back and journal clearance')
     c=Core()
     port=Port()
     p=retained_parts(c,0.,travel)
@@ -75,12 +77,12 @@ def parts(angle=0.,travel=0.,*,connected=False):
     if travel<6.4 and abs(angle/45-round(angle/45))>1e-8:
         raise ValueError("nonindexed pose requires released clutch")
     # Stationary neck joins cup below the rotating journal.
-    fixed_neck=box(-43,15,24,18).translate(cq.Vector(0,0,0))
-    p["stationary"]=p["stationary"].fuse(fixed_neck).fuse(placed(retained_socket(port,False),False)).clean()
+    fixed_neck=box(27-mouth,mouth-55,24,18).translate(cq.Vector(0,0,0))
+    p["stationary"]=p["stationary"].fuse(fixed_neck).fuse(placed(retained_socket(port,False),False,mouth=mouth)).clean()
     # Integral riser inside keeper opening; bridge passes above screw heads.
     riser=box(19,6,10,10).translate(cq.Vector(0,0,25.5))
-    bridge=box(19,24,12,8).translate(cq.Vector(0,0,30.5))
-    moving=p["rotating"].fuse(riser).fuse(bridge).fuse(placed(retained_socket(port,True),True)).clean()
+    bridge=box(19,mouth-46,12,8).translate(cq.Vector(0,0,30.5))
+    moving=p["rotating"].fuse(riser).fuse(bridge).fuse(placed(retained_socket(port,True),True,mouth=mouth)).clean()
     p["rotating"]=pose(moving,angle)
     p.update(split_keeper(p.pop("keeper")))
     for name in ("stationary","rotating"):
@@ -88,23 +90,23 @@ def parts(angle=0.,travel=0.,*,connected=False):
             raise ValueError("invalid integral housing: "+name)
     if connected:
         for side,moving_side in (("fixed",False),("moving",True)):
-            p[side+"_plug"]=placed(plug(port),moving_side,angle)
-            p[side+"_pin"]=placed(compact_pin(port,moving_side),moving_side,angle)
-            p[side+"_retainer"]=placed(retainer_screw(port,moving_side),moving_side,angle)
+            p[side+"_plug"]=placed(plug(port),moving_side,angle,mouth=mouth)
+            p[side+"_pin"]=placed(compact_pin(port,moving_side),moving_side,angle,mouth=mouth)
+            p[side+"_retainer"]=placed(retainer_screw(port,moving_side),moving_side,angle,mouth=mouth)
     return p
 
 # The split keeper is installed before the four screws, with the bridge
 # parallel to the split. Operating angle and assembly angle are distinct.
 ASSEMBLY_ANGLE=0.
 
-def keeper_insertion_audit(angle=ASSEMBLY_ANGLE,step=1.):
+def keeper_insertion_audit(angle=ASSEMBLY_ANGLE,step=1.,*,mouth=MOUTH):
     """Sample both straight lateral insertion paths, including the other half.
     Return every detected collision; no tolerance relaxation.
     A clear sampled path is not a continuous-motion or physical certificate.
     """
     if not math.isfinite(step) or not 0<step<=2:
         raise ValueError("invalid insertion sampling step")
-    p=parts(angle,0.)
+    p=parts(angle,0.,mouth=mouth)
     defects=[]
     installed=["stationary","rotating","plunger"]
     for name,sign in (("keeper_positive",1),("keeper_negative",-1)):

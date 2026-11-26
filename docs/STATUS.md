@@ -1,2 +1,2 @@
 # Estado V3
-Usuario confirma pruebas locales verdes en ccd30be (sin log de recuento). Nuevo diseño de retención de pasadores por ranura y prisionero M3x12 nominal, ocho casos nuevos; CI pendiente. No se cambia el núcleo de ocho dientes ni desfase. Rosca, resorte comercial, resistencia, montaje físico y exportación final pendientes. No apto para carga.
+cab7cda: evidencia local 8/8 retención y 70/70 codo. Regresión 141 seleccionadas, resultado final no aportado. Candidato compacto boca 67 mm, base 70 conservada, 38 casos nuevos. No se altera núcleo ni Ø74/desfase. CI pendiente; resorte comercial, fijaciones reales, resistencia y montaje físico no acreditados. No apto para carga.

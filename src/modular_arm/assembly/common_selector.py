@@ -164,7 +164,7 @@ def index_pin(c):
     return shaft.fuse(head)
 
 
-def common_selector_parts(c=None,mode=Mode.B,*,index_inserted=True):
+def common_selector_parts(c=None,mode=Mode.B,*,index_inserted=True,include_arms=False):
     c=c or CommonSelectorConfig()
     parts=manual_parts(c.actuation,mode)
     q=c.contact.full_release_deg
@@ -199,6 +199,9 @@ def common_selector_parts(c=None,mode=Mode.B,*,index_inserted=True):
         parts["angular_lock_"+name]=shape.rotate((0,0,0),(1,0,0),180).translate(
             cq.Vector(-p.lock_radius_mm,0,c.top_z_mm+p.lock_head_thickness_mm))
     install_returns(c,parts,mode)
+    if include_arms:
+        from modular_arm.assembly.arm_interfaces import attach_arm_interfaces
+        attach_arm_interfaces(c,parts)
     return parts
 
 

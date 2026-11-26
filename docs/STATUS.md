@@ -1,2 +1,2 @@
 # Estado V3
-Rama independiente desde V2 68a9cb3. Prototipo de embrague axial central, cuatro sólidos y volumen reservado de resorte. 27 pruebas escritas, CI pendiente. Pendientes: resolver defectos, cierre de tapa, apoyo superior y captura axial, resorte real, montaje y pruebas físicas. V1/V2 preservadas. No apto para carga.
+Base 1755b41: CI success 45870388965. Nueva intervención: banco concéntrico propio inspirado en referencia Thingiverse 7168674, ocho lóbulos Ø36, carcasa Ø60, engrane 6, carrera 7, cámara de retorno. 18 casos escritos; CI pendiente. No es articulación final: faltan apoyos independientes, retención axial, topes y resorte físico. Alcance limitado al bloqueo; accesorios aplazados. No apto para carga.

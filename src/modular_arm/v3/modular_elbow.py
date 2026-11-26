@@ -19,14 +19,43 @@ def placed(shape,moving,angle=0.):
         return pose(shape.translate(cq.Vector(MOUTH,0,MOVING_Z)),angle)
     return pose(shape,180).translate(cq.Vector(-MOUTH,0,FIXED_Z))
 
+# Groove and flush M3 retaining screw are located inside the head-side
+# socket wall, outside the nominal plug/wall shear interfaces.
+GROOVE_WIDTH=3.2
+GROOVE_RADIUS=1.75
+RETAINER_TIP_Y=2.0
+RETAINER_LENGTH=12.
+RETAINER_CORE_RADIUS=1.2
+RETAINER_PILOT_RADIUS=1.25
+
+def head_side(shape,moving):
+    return shape if moving else shape.rotate((0,0,0),(1,0,0),180)
+
+def groove_z(c):
+    return c.outer_height/2-2.
+
+def retained_socket(c,moving):
+    z=groove_z(c)
+    pilot=cq.Solid.makeCylinder(RETAINER_PILOT_RADIUS,c.outer_width/2,
+        cq.Vector(-c.pin_center,RETAINER_TIP_Y-.2,z),cq.Vector(0,1,0))
+    return socket(c).cut(head_side(pilot,moving)).clean()
+
+def retainer_screw(c,moving):
+    """M3x12 nominal core envelope; thread engagement not represented."""
+    return head_side(cq.Solid.makeCylinder(RETAINER_CORE_RADIUS,RETAINER_LENGTH,
+        cq.Vector(-c.pin_center,RETAINER_TIP_Y,groove_z(c)),cq.Vector(0,1,0)),moving)
+
 def compact_pin(c, moving):
     """Full socket-wall engagement, with head facing away from folding gap."""
     half=c.outer_height/2
     x=-c.pin_center
     shaft=cq.Solid.makeCylinder(c.pin/2,c.outer_height+.5,cq.Vector(x,0,-half-.5))
     head=cq.Solid.makeCylinder(c.pin,3.,cq.Vector(x,0,half))
-    pin=shaft.fuse(head).clean()
-    return pin if moving else pin.rotate((0,0,0),(1,0,0),180)
+    z=groove_z(c)-GROOVE_WIDTH/2
+    outer=cq.Solid.makeCylinder(c.pin/2+.1,GROOVE_WIDTH,cq.Vector(x,0,z))
+    inner=cq.Solid.makeCylinder(GROOVE_RADIUS,GROOVE_WIDTH,cq.Vector(x,0,z))
+    pin=shaft.fuse(head).cut(outer.cut(inner)).clean()
+    return head_side(pin,moving)
 
 def split_keeper(keeper):
     """Two large removable half rings; each retains two existing M3 holes."""
@@ -47,11 +76,11 @@ def parts(angle=0.,travel=0.,*,connected=False):
         raise ValueError("nonindexed pose requires released clutch")
     # Stationary neck joins cup below the rotating journal.
     fixed_neck=box(-43,15,24,18).translate(cq.Vector(0,0,0))
-    p["stationary"]=p["stationary"].fuse(fixed_neck).fuse(placed(socket(port),False)).clean()
+    p["stationary"]=p["stationary"].fuse(fixed_neck).fuse(placed(retained_socket(port,False),False)).clean()
     # Integral riser inside keeper opening; bridge passes above screw heads.
     riser=box(19,6,10,10).translate(cq.Vector(0,0,25.5))
     bridge=box(19,24,12,8).translate(cq.Vector(0,0,30.5))
-    moving=p["rotating"].fuse(riser).fuse(bridge).fuse(placed(socket(port),True)).clean()
+    moving=p["rotating"].fuse(riser).fuse(bridge).fuse(placed(retained_socket(port,True),True)).clean()
     p["rotating"]=pose(moving,angle)
     p.update(split_keeper(p.pop("keeper")))
     for name in ("stationary","rotating"):
@@ -61,6 +90,7 @@ def parts(angle=0.,travel=0.,*,connected=False):
         for side,moving_side in (("fixed",False),("moving",True)):
             p[side+"_plug"]=placed(plug(port),moving_side,angle)
             p[side+"_pin"]=placed(compact_pin(port,moving_side),moving_side,angle)
+            p[side+"_retainer"]=placed(retainer_screw(port,moving_side),moving_side,angle)
     return p
 
 # The split keeper is installed before the four screws, with the bridge

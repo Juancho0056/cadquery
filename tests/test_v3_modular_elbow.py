@@ -12,7 +12,7 @@ def test_modular_elbow_poses(angle,travel):
     for (a,s),(b,t) in combinations(p.items(),2):
         assert s.intersect(t).Volume()<1e-6,(angle,travel,a,b)
     for a,s in fasteners().items():
-        for n in ("rotating","moving_plug","moving_pin","fixed_plug","fixed_pin"):
+        for n in ("rotating","moving_plug","moving_pin","fixed_plug","fixed_pin","fixed_retainer","moving_retainer"):
             assert s.intersect(p[n]).Volume()<1e-6,(angle,a,n)
 
 def test_integral_rotor_insertion():

@@ -13,7 +13,18 @@ FLAT=7.
 CLEARANCE=.25
 END_GAP=.3
 PIN_AT=38.
-PIN_RADIUS=1.65
+PIN_RADIUS=2.15
+SCREW_RADIUS=2.
+SCREW_LENGTH=35.
+SEAT_Y=12.8
+SEAT_RADIUS=4.7
+WASHER_RADIUS=4.5
+WASHER_THICKNESS=.8
+HEAD_RADIUS=3.8
+HEAD_HEIGHT=2.2
+NUT_RADIUS=4.1
+NUT_HEIGHT=5.
+
 V=cq.Vector
 
 def direction(index):
@@ -34,11 +45,20 @@ def keyed(index,lo,hi,clearance=0.):
 def pin_bore(index):
     return cq.Solid.makeCylinder(PIN_RADIUS,40,V(direction(index)*PIN_AT,-20,flush_arm.AXES[index]),V(0,1,0))
 
+def cross_cylinder(index,radius,y,length):
+    return cq.Solid.makeCylinder(radius,length,V(direction(index)*PIN_AT,y,flush_arm.AXES[index]),V(0,1,0))
+
+def bearing_seats(index):
+    return (cross_cylinder(index,SEAT_RADIUS,-25.,25.-SEAT_Y),
+            cross_cylinder(index,SEAT_RADIUS,SEAT_Y,25.-SEAT_Y))
+
 def head(index):
     s=flush_arm.finished_flush(index)
     s=s.intersect(axial_box(index,-60,JOIN))
     # Blind socket opens at the distal face. No cuts into the joint core.
     s=s.cut(keyed(index,JOIN-LENGTH-END_GAP,JOIN+1,CLEARANCE))
+    for seat in bearing_seats(index):
+        s=s.cut(seat)
     return valid(s.cut(pin_bore(index)).clean(),"head")
 
 def tenon(index):
@@ -70,7 +90,31 @@ def arm(archive,index):
     return result
 
 def pin_gauge(index):
-    return cq.Solid.makeCylinder(1.5,27.8,V(direction(index)*PIN_AT,-13.9,flush_arm.AXES[index]),V(0,1,0))
+    """Smooth major-diameter envelope, not a modeled thread."""
+    return cross_cylinder(index,SCREW_RADIUS,-SEAT_Y-WASHER_THICKNESS,SCREW_LENGTH)
+
+def annular_envelope(index,radius,y,height):
+    return cross_cylinder(index,radius,y,height).cut(
+        cross_cylinder(index,PIN_RADIUS,y-.1,height+.2)).clean()
+
+def connection_hardware(index):
+    y=-SEAT_Y-WASHER_THICKNESS
+    screw=pin_gauge(index).fuse(cross_cylinder(index,HEAD_RADIUS,y-HEAD_HEIGHT,HEAD_HEIGHT)).clean()
+    return {"screw":valid(screw,"screw envelope"),
+            "washer_head":annular_envelope(index,WASHER_RADIUS,y,WASHER_THICKNESS),
+            "washer_nut":annular_envelope(index,WASHER_RADIUS,SEAT_Y,WASHER_THICKNESS),
+            "nut":annular_envelope(index,NUT_RADIUS,SEAT_Y+WASHER_THICKNESS,NUT_HEIGHT)}
+
+def hardware_dimensions():
+    grip=2*(SEAT_Y+WASHER_THICKNESS)
+    return {"thread":"M4 x 0.7","length_under_head_mm":SCREW_LENGTH,
+            "head_envelope_mm":[2*HEAD_RADIUS,HEAD_HEIGHT],
+            "nut_envelope_mm":[2*NUT_RADIUS,NUT_HEIGHT],
+            "washer_envelope_mm":[2*WASHER_RADIUS,WASHER_THICKNESS],
+            "bearing_seat_diameter_mm":2*SEAT_RADIUS,
+            "grip_mm":grip,"thread_projection_beyond_nut_mm":SCREW_LENGTH-grip-NUT_HEIGHT,
+            "nominal_socket_side_wall_at_seat_center_mm":SEAT_Y-RADIUS-CLEARANCE,
+            "status":"nominal envelopes; verify supplier dimensions and actual bearing contact"}
 
 def parts(archive=None,angle=0.,travel=0.):
     joint.parts(angle,travel)
@@ -78,12 +122,12 @@ def parts(archive=None,angle=0.,travel=0.):
     for i,label in ((1,"a"),(5,"b")):
         h=ia.cad_mesh(head(i))
         a=ia.cad_mesh(coupon_arm(i)) if archive is None else arm(archive,i)
-        pin=ia.cad_mesh(pin_gauge(i))
+        hardware={f'connection_{label}_{n}':ia.cad_mesh(s) for n,s in connection_hardware(i).items()}
         if i==5:
             transform=ia.mesh_library().transformations.rotation_matrix(math.radians(angle),(0,0,1))
-            for m in (h,a,pin):
+            for m in (h,a,*hardware.values()):
                 m.apply_transform(transform)
-        result.update({f"head_{label}":h,f"tube_{label}":a,f"connection_pin_{label}":pin})
+        result.update({f"head_{label}":h,f"tube_{label}":a,**hardware})
     result["button"]=ia.cad_mesh(flush_arm.button(travel))
     result.update({n:ia.cad_mesh(s) for n,s in joint.screws(angle).items()})
     return result
@@ -100,6 +144,8 @@ def export(destination,archive=None,angle=0.,travel=0.):
     for folder in (preview,printable):
         folder.mkdir(parents=True,exist_ok=True)
     names=("head_a","head_b","tube_a","tube_b","button")
+    for label in ("a","b"):
+        (preview/f"connection_pin_{label}.stl").unlink(missing_ok=True)
     for n,m in p.items():
         m.export(preview/(n+".stl"))
     for n in names:
@@ -113,8 +159,8 @@ def export(destination,archive=None,angle=0.,travel=0.):
     manifest={"status":"unloaded_fit_prototype_only","variant":"coupon" if archive is None else "reference_tubes",
               "printable":names,"connection":{"engagement_mm":LENGTH,"diameter_mm":2*RADIUS,
               "flat_offset_mm":FLAT,"radial_clearance_mm":CLEARANCE,"end_clearance_mm":END_GAP,
-              "cross_bore_mm":2*PIN_RADIUS,"metal_pin_nominal_mm":3.,"pin_gauge_length_mm":27.8},
-              "hardware":"Two connection pins plus three joint retainers and one compression spring. Gauges are preview only; pin retention and commercial hardware not qualified.",
+              "cross_bore_mm":2*PIN_RADIUS,"fastener":hardware_dimensions()},
+              "hardware":"Two M4 x 35 button-head screws, two M4 prevailing-torque nuts, four M4 washers, three joint retainers and one compression spring. Metal envelopes are preview only; verify real fastener dimensions, seating and preload.",
               "pose":{"angle":angle,"travel":travel},"notes":"No load rating. Full telescoping assembly not validated. No changes to integral V4."}
     (dest/"manifest.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
     return manifest

@@ -1,5 +1,5 @@
 # Estado
 Fase 00 publicada; batería exacta remota pendiente.
 Fase 01 inventario real documentado; cotas funcionales y permisos pendientes.
-Fase 02: banco integrado de indexación con horquilla perforada para apoyar pivotes, rotor ranurado con agujeros para seguro angular independiente y pasador axial desmontable. Selector A/B/C definido solo como contrato de software. Doce casos adicionales escritos; NOT_RUN. No hay trinquete reversible funcional. Perfil de contacto, topes, retorno elástico, selector físico, retenciones definitivas, carcasa, refuerzo de uñas y conexión al brazo pendientes.
-Capturas del usuario confirmaron visualización CQ-editor del rotor, uñas, banco, keeper y horquilla anterior; no acreditan cinemática ni resistencia. No fabricar para carga. Prioridad: ejecutar batería completa, corregir interferencias, validar perfil y retorno.
+Fase 02: banco integrado de indexación previo preservado. Nueva alternativa de rotor de doble pista asimétrica especular, seguidores radiales y algoritmo de retracción muestreada. Ocho pruebas nuevas escritas, NOT_RUN. La geometría de doble pista no incorpora aún agujeros de seguro angular ni se ha integrado con horquilla.
+No hay trinquete reversible funcional. Uñas pivotantes definitivas, topes, retorno, selector físico, seguro independiente en nuevo rotor, DfAM y ensayos físicos pendientes. No fabricar para carga. No atribuir al código 3D las comprobaciones preliminares 2D reportadas anteriormente.

@@ -21,7 +21,11 @@ def overhang_report(triangles,build_axis,limit=45.,base_tolerance=.05):
     # Vertical walls = 0 degrees; horizontal downward faces = 90.
     angles=np.degrees(np.arcsin(np.clip(-(cross[good]@axis)/lengths[good],0,1)))
     bad=(angles>limit)&(~on_bed[good])
-    return {"limit_deg_from_vertical":limit,
+    indices=np.flatnonzero(good)[bad]
+    # Coordinates remain in assembly frame. Export can highlight exact faces.
+    return {"candidate_indices":indices.tolist(),
+            "candidate_bounds_mm":None if not len(indices) else [t[indices].min(axis=(0,1)).tolist(),t[indices].max(axis=(0,1)).tolist()],
+            "limit_deg_from_vertical":limit,
             "unsupported_candidate_area_mm2":float(lengths[good][bad].sum()/2),
             "candidate_facets":int(bad.sum()),
             "max_downward_angle_deg":float(angles[~on_bed[good]].max()) if (~on_bed[good]).any() else 0.,

@@ -63,26 +63,11 @@ def align_body(m,index):
     return m
 
 def joint_half(index):
-    """Retain the core and replace the narrow terminal with a progressive loft."""
-    if index not in CUTS:
-        raise ValueError("unsupported reference body")
-    s=joint.fixed() if index==1 else joint.moving()
-    direction=-1 if index==1 else 1
-    z=CENTER_Z[index]
-    # Remove the old rounded neck tip, which otherwise protrudes through
-    # the new transition. Preserve all core features within radius 28.
-    clip=cq.Solid.makeBox(100,200,200,cq.Vector(39 if index==5 else -139,-100,-100))
-    s=s.cut(clip)
-    # Four smooth oval sections, with a constant-sized overlap at the end.
-    # Larger minimum section than the previous 13 x 6.5 mm semiaxes.
-    sections=((30,16.0,7.0),(36,15.5,9.0),(42,14.2,12.0),
-              (46,13.7,13.3),(48,13.7,13.3))
-    wires=[cq.Workplane("YZ",origin=(direction*x,0,z)).ellipse(y,h).val()
-           for x,y,h in sections]
-    bridge=cq.Solid.makeLoft(wires,ruled=False)
-    result=s.fuse(bridge).clean()
+    """Construct exterior first; reuse the canonical V4 machining operations."""
+    from modular_arm.v4.transition import finished_half
+    result=finished_half(index)
     if not result.isValid() or len(result.Solids())!=1:
-        raise ValueError("invalid reinforced transition")
+        raise ValueError("invalid integrated CAD half")
     return result
 
 def protected_region(mesh,index):

@@ -26,9 +26,9 @@ def neck(z,h):
     p=cq.Workplane("XY").moveTo(15,-22).lineTo(43,-12).threePointArc((51,0),(43,12)).lineTo(15,22).close().extrude(h).translate((0,0,z)).val()
     return p
 
-def fixed():
+def fixed(blank=None):
     c=Core()
-    s=cyl(28,-10,22).fuse(turn(neck(-4,16),180))
+    s=cyl(28,-10,22).fuse(turn(neck(-4,16),180)) if blank is None else blank
     s=s.fuse(cyl(JOURNAL,11.8,5.2))
     s=s.cut(ring(24,GROOVE_ROOT,13.1,3.2))
     s=s.cut(cyl(19.4,-7,7.1)).cut(profile(c,0,18,c.clearance))
@@ -44,9 +44,9 @@ def radial_cylinder(radius,start,length,a):
     d=cq.Vector(math.cos(t),math.sin(t),0)
     return cq.Solid.makeCylinder(radius,length,cq.Vector(start*d.x,start*d.y,14.7),d)
 
-def moving():
+def moving(blank=None):
     c=Core()
-    s=cyl(28,12.4,14).fuse(neck(12.4,14))
+    s=cyl(28,12.4,14).fuse(neck(12.4,14)) if blank is None else blank
     s=s.cut(cyl(JOURNAL+.35,12,5.4))
     s=s.cut(profile(c,17.4,6,c.clearance))
     s=s.cut(cyl(c.stem_radius+c.clearance,23.3,4))

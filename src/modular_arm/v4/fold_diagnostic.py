@@ -17,8 +17,8 @@ def report_collision(a,b):
     return {"volume_mm3":volume,"bounds_mm":[lo.tolist(),hi.tolist()],
             "region":region},q
 
-def export_diagnostic(archive,destination,angle=180.):
-    p=parts(archive,angle,0.,flush=True)
+def export_diagnostic(archive,destination,angle=180.,*,clocking=0.):
+    p=parts(archive,angle,0.,flush=True,clocking=clocking)
     dest=Path(destination)
     dest.mkdir(parents=True,exist_ok=True)
     row,q=report_collision(p["arm_a_integrated"],p["arm_b_integrated"])
@@ -28,6 +28,6 @@ def export_diagnostic(archive,destination,angle=180.):
         q.export(dest/"COLLISION_NOT_PRINTABLE.stl")
     else:
         (dest/"COLLISION_NOT_PRINTABLE.stl").unlink(missing_ok=True)
-    result={"status":"diagnostic_only","angle":angle,"collision":row}
+    result={"status":"diagnostic_only","angle":angle,"clocking":clocking,"collision":row}
     (dest/"report.json").write_text(json.dumps(result,indent=2),encoding="utf-8")
     return result

@@ -59,12 +59,14 @@ def crop_terminal(m,index):
     b=tm.creation.box(extents=hi-lo,transform=tm.transformations.translation_matrix((lo+hi)/2))
     return require_solid(tm.boolean.intersection([m,b],engine="manifold"),"cropped original")
 
-def align_body(m,index,*,axis_z=None):
+def align_body(m,index,*,axis_z=None,clocking=0.):
     m=m.copy()
     cx,cy=CENTERS[index]
     m.apply_translation((-cx,-cy,-CUTS[index]))
     # Original +Z maps to +X, transverse X maps to -Z.
     m.apply_transform(np.array([[0,0,1,0],[0,1,0,0],[-1,0,0,0],[0,0,0,1]],dtype=float))
+    from modular_arm.v4.clocking import rotate_module
+    m=rotate_module(m,clocking)
     m.apply_translation((-JOIN_X if index==1 else JOIN_X,0,CENTER_Z[index] if axis_z is None else axis_z))
     return m
 
@@ -127,7 +129,7 @@ def preservation_report(original,integrated,index):
     return {"added_mm3":0. if added.is_empty else abs(float(added.volume)),
             "removed_mm3":0. if removed.is_empty else abs(float(removed.volume))}
 
-def integrated_half(archive,index,*,axis_z=None,reinforcement=0.,straight=False,flush=False):
+def integrated_half(archive,index,*,axis_z=None,reinforcement=0.,straight=False,flush=False,clocking=0.):
     """Boolean fuse, never concatenate disconnected shells or silently fall back."""
     if flush:
         from modular_arm.v4.flush_arm import AXES
@@ -135,7 +137,7 @@ def integrated_half(archive,index,*,axis_z=None,reinforcement=0.,straight=False,
             raise ValueError("flush axis mismatch")
         axis_z=AXES[index]
     tm=mesh_library()
-    body=align_body(crop_terminal(original_mesh(archive,index),index),index,axis_z=axis_z)
+    body=align_body(crop_terminal(original_mesh(archive,index),index),index,axis_z=axis_z,clocking=clocking)
     half=cad_mesh(joining_half(index,axis_z=axis_z,reinforcement=reinforcement,straight=straight,flush=flush))
     overlap=tm.boolean.intersection([body,half],engine="manifold")
     if overlap.is_empty or overlap.volume<=1:
@@ -159,9 +161,13 @@ def axis_heights(offset=15.4):
         return dict(CENTER_Z)
     return {1:11.7-offset/2,5:11.7+offset/2}
 
-def parts(archive,angle=0.,travel=0.,*,offset=15.4,reinforcement=0.,straight=False,flush=False):
+def parts(archive,angle=0.,travel=0.,*,offset=15.4,reinforcement=0.,straight=False,flush=False,clocking=0.):
     if not math.isfinite(angle):
         raise ValueError("invalid angle")
+    from modular_arm.v4.clocking import validate_clocking
+    validate_clocking(clocking)
+    if clocking and not flush:
+        raise ValueError('clocking currently requires flush profile')
     # Retain original indexing and travel contract.
     base=joint.parts(angle,travel)
     if flush:
@@ -180,8 +186,8 @@ def parts(archive,angle=0.,travel=0.,*,offset=15.4,reinforcement=0.,straight=Fal
         heights=AXES
     else:
         heights=axis_heights(offset)
-    a=integrated_half(archive,1,axis_z=heights[1],straight=straight,flush=flush)
-    b=integrated_half(archive,5,axis_z=heights[5],reinforcement=reinforcement,straight=straight,flush=flush)
+    a=integrated_half(archive,1,axis_z=heights[1],straight=straight,flush=flush,clocking=clocking)
+    b=integrated_half(archive,5,axis_z=heights[5],reinforcement=reinforcement,straight=straight,flush=flush,clocking=clocking)
     b.apply_transform(tm.transformations.rotation_matrix(math.radians(angle),(0,0,1)))
     return {"arm_a_integrated":a,"arm_b_integrated":b,
             **{n:cad_mesh(s) for n,s in base.items() if n not in ("arm_a","arm_b")}}
@@ -221,13 +227,13 @@ def audit(parts):
 
 PRINTABLE=("arm_a_integrated","arm_b_integrated","button")
 
-def export(archive,destination,angle=0.,travel=0.,*,offset=15.4,reinforcement=0.,straight=False,flush=False):
-    p=parts(archive,angle,travel,offset=offset,reinforcement=reinforcement,straight=straight,flush=flush)
+def export(archive,destination,angle=0.,travel=0.,*,offset=15.4,reinforcement=0.,straight=False,flush=False,clocking=0.):
+    p=parts(archive,angle,travel,offset=offset,reinforcement=reinforcement,straight=straight,flush=flush,clocking=clocking)
     defects=audit(p)
     if defects:
         raise ValueError(f"interference mm3: {defects}")
     # Export neutral individual parts rather than the operating pose.
-    neutral=parts(archive,0.,0.,offset=offset,reinforcement=reinforcement,straight=straight,flush=flush) if (angle,travel)!=(0.,0.) else p
+    neutral=parts(archive,0.,0.,offset=offset,reinforcement=reinforcement,straight=straight,flush=flush,clocking=clocking) if (angle,travel)!=(0.,0.) else p
     dest=Path(destination)
     printable=dest/"prototype_printable"
     assembly=dest/"assembly_preview"
@@ -247,7 +253,7 @@ def export(archive,destination,angle=0.,travel=0.,*,offset=15.4,reinforcement=0.
               "printable":list(PRINTABLE),
               "metal_hardware":[{"item":"radial retainer","quantity":3,"spec":"nominal M3 dog-point; exact length and thread pending"},
                                 {"item":"compression spring","quantity":1,"spec":"OD 18 mm envelope; installed 13 mm, compressed 6 mm; commercial part pending"}],
-              "assembly_pose":{"angle":angle,"travel":travel,"axis_offset_mm":28.4 if flush else 29. if straight else offset,"profile":"flush" if flush else "straight" if straight else "curved","b_reinforcement_mm":reinforcement},
+              "assembly_pose":{"angle":angle,"travel":travel,"axis_offset_mm":28.4 if flush else 29. if straight else offset,"profile":"flush" if flush else "straight" if straight else "curved","b_reinforcement_mm":reinforcement,"module_clocking_deg":clocking},
               "notes":"Only prototype_printable contains candidate printed parts. Assembly preview is not a print plate. Spring not exported as a solid. Printing orientation not qualified."}
     (dest/"manifest.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
     return p

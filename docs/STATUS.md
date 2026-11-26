@@ -1,2 +1,2 @@
-# Estado V3
-cab7cda: evidencia local 8/8 retención y 70/70 codo. Regresión 141 seleccionadas, resultado final no aportado. Candidato compacto boca 67 mm, base 70 conservada, 38 casos nuevos. No se altera núcleo ni Ø74/desfase. CI pendiente; resorte comercial, fijaciones reales, resistencia y montaje físico no acreditados. No apto para carga.
+# V4
+Rama independiente desde 95afd60. Nueva arquitectura A/B integral Ø56, dentado Ø36 ocho lóbulos y carrera 7. Tres piezas impresas principales, retención radial nominal. 42 pruebas nuevas escritas, no ejecutadas todavía. Extremos integrales sin conexión modular definitiva; resorte comercial, fijación real, resistencia y exportación pendientes. No apto para carga.

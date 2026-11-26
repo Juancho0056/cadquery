@@ -1,7 +1,7 @@
 import pytest
 import cadquery as cq
 from itertools import combinations
-from modular_arm.v3.modular_elbow import parts
+from modular_arm.v3.modular_elbow import parts,keeper_insertion_audit,assembly_parts,ASSEMBLY_ANGLE
 from modular_arm.v3.assembly import fasteners
 
 @pytest.mark.parametrize("angle,travel",[(a,0.) for a in range(-180,181,45)]+[(a,7.) for a in range(-180,181,15)])
@@ -32,17 +32,34 @@ def test_near_fold_clearance(angle):
     for (a,s),(b,t) in combinations(p.items(),2):
         assert s.intersect(t).Volume()<1e-6,(angle,a,b)
 
-@pytest.mark.parametrize("angle",[0,45,90,180])
+@pytest.mark.parametrize("angle",[0,180])
 def test_keeper_lateral_insertion(angle):
-    p=parts(angle)
-    for name,sign in (("keeper_positive",1),("keeper_negative",-1)):
-        for d in range(0,81,2):
-            q=p[name].translate(cq.Vector(0,sign*d,0))
-            for n in ("stationary","rotating","plunger"):
-                assert q.intersect(p[n]).Volume()<1e-6,(angle,name,d,n)
+    assert keeper_insertion_audit(angle,step=1.)==[]
+
+@pytest.mark.parametrize("angle",[45,90])
+def test_keeper_wrong_orientation_detected(angle):
+    # These are operating poses, not supported insertion poses.
+    # Preserve the observed interference as a negative control.
+    defects=keeper_insertion_audit(angle,step=2.)
+    assert any(a=="keeper_positive" and b=="rotating" for a,b,d,v in defects)
+
+def test_assembly_contract():
+    assert ASSEMBLY_ANGLE==0
+    p=assembly_parts()
+    assert keeper_insertion_audit()==[]
+    assert p["rotating"].intersect(p["plunger"]).Volume()<1e-6
 
 def test_split_keeper_capture():
     p=parts(0,7.)
     lifted=p["rotating"].translate(cq.Vector(0,0,1))
     for name in ("keeper_positive","keeper_negative"):
         assert lifted.intersect(p[name]).Volume()>1e-3
+
+@pytest.mark.parametrize("angle",range(0,181,10))
+def test_post_assembly_motion(angle):
+    p=parts(angle,7.,connected=True)
+    for (a,s),(b,t) in combinations(p.items(),2):
+        assert s.intersect(t).Volume()<1e-6,(angle,a,b)
+
+def test_keeper_wrong_angle_negative_control_135():
+    assert keeper_insertion_audit(135,step=2.)

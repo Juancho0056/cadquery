@@ -62,3 +62,33 @@ def parts(angle=0.,travel=0.,*,connected=False):
             p[side+"_plug"]=placed(plug(port),moving_side,angle)
             p[side+"_pin"]=placed(compact_pin(port,moving_side),moving_side,angle)
     return p
+
+# The split keeper is installed before the four screws, with the bridge
+# parallel to the split. Operating angle and assembly angle are distinct.
+ASSEMBLY_ANGLE=0.
+
+def keeper_insertion_audit(angle=ASSEMBLY_ANGLE,step=1.):
+    """Sample both straight lateral insertion paths, including the other half.
+    Return every detected collision; no tolerance relaxation.
+    A clear sampled path is not a continuous-motion or physical certificate.
+    """
+    if not math.isfinite(step) or not 0<step<=2:
+        raise ValueError("invalid insertion sampling step")
+    p=parts(angle,0.)
+    defects=[]
+    installed=["stationary","rotating","plunger"]
+    for name,sign in (("keeper_positive",1),("keeper_negative",-1)):
+        count=math.ceil(80/step)
+        for i in range(count,-1,-1):
+            d=80*i/count
+            q=p[name].translate(cq.Vector(0,sign*d,0))
+            for n in installed:
+                v=q.intersect(p[n]).Volume()
+                if v>1e-6:
+                    defects.append((name,n,d,v))
+        installed.append(name)
+    return defects
+
+def assembly_parts():
+    """Prescribed assembly pose; do not insert keeper at operating angles."""
+    return parts(ASSEMBLY_ANGLE,0.)

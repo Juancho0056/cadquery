@@ -10,12 +10,13 @@ for start in [Path(os.environ.get("MODULAR_ARM_ROOT",Path.cwd())),Path(globals()
     break
 else:
     raise RuntimeError("Set MODULAR_ARM_ROOT to repository root")
-from modular_arm.v3.modular_elbow import parts
+from modular_arm.v3.modular_elbow import parts,keeper_insertion_audit,ASSEMBLY_ANGLE
 from modular_arm.v3.assembly import fasteners
 from itertools import combinations
 ANGLE=45.
 TRAVEL=0.
 CONNECTED=False
+CHECK_ASSEMBLY=False
 p=parts(ANGLE,TRAVEL,connected=CONNECTED)
 for name,s in p.items():
     show_object(s,name=name,options={"color":(.15,.65,.55) if name=="rotating" else (.9,.55,.15) if name=="plunger" else (.55,.65,.75)})
@@ -28,3 +29,8 @@ for (a,s),(b,t) in combinations(p.items(),2):
         errors.append((a,b,overlap.Volume()))
         show_object(overlap,name="overlap_"+a+"_"+b,options={"color":(1.,0.,0.)})
 print("Interference audit:",errors if errors else "PASS")
+
+if CHECK_ASSEMBLY:
+    defects=keeper_insertion_audit(ASSEMBLY_ANGLE)
+    print("Assembly angle:",ASSEMBLY_ANGLE)
+    print("Keeper insertion audit:",defects if defects else "PASS")

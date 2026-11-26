@@ -1,2 +1,2 @@
 # Estado V3
-ad12f17: 63/63 V3 local. 39902f7: 30/36 pruebas de codo local, seis interferencias en plegado. Corrección: pasadores orientados hacia fuera, punta 0.5 mm; retenedor dividido para montaje lateral. Se conservan todos los casos y se añaden 13. CI pendiente. Resorte comercial, retención efectiva de pasadores, resistencia y montaje físico no acreditados. No apto para carga.
+4566f29: evidencia local 47/49; plegado corregido. Dos fallos por instalación del retenedor en ángulos no adecuados (45°,90°). Contrato de montaje a 0° documentado e implementado, controles negativos conservados y barrido posterior añadido. CI pendiente. Sin cambios al dentado. Resorte comercial, fijaciones, retención de pasadores y ensayos físicos no acreditados. No apto para carga.

@@ -1,4 +1,3 @@
 # Estado
-Línea base exacta: 85 passed in 18.18s (761b149, run 45746767414).
-Nueva intervención: llave coaxial especular, bolsillo con holgura nominal y cuatro pruebas de interfaz. Auditoría de interferencias A/B/C incorporada al CI obligatorio con evidencia JSON. Resultado del nuevo commit pendiente.
-P01 guía común pendiente; P02 parcial; P03 retorno pendiente; P04 detentes pendientes; P05 seguro cautivo pendiente; P06 interfaz de brazo pendiente; P07 parcial. No apto para carga.
+Línea base exacta: 89 passed in 24.91s y auditoría coaxial exitosa (641e067, run 45747057695).
+Nueva iteración: corredera común sobre tapa, dos palancas excéntricas, empujadores y guía parcial. Cinco pruebas nuevas escritas; auditoría experimental separada y resultado pendiente. P01 y P02 parciales; P03 retorno, P04 detentes, P05 seguro cautivo, P06 interfaz de brazo pendientes; P07 parcial. No se acredita transmisión automática, guía cautiva ni interbloqueo. No apto para carga.

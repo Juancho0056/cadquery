@@ -5,6 +5,7 @@ from dataclasses import dataclass,field
 import math
 import cadquery as cq
 from modular_arm.v2.connector import Port,socket,box
+from modular_arm.mechanisms.retention import KeeperConfig,keeper_parts
 
 @dataclass(frozen=True,slots=True)
 class Elbow:
@@ -69,13 +70,27 @@ def pin(c,d,x):
     shaft=cylinder(x,0,-c.total/2-2,d,c.total+2)
     return shaft.fuse(cylinder(x,0,c.total/2,d+4,3))
 
+def retained_axle(c):
+    """Independent axle with head and replaceable external clip."""
+    k=KeeperConfig(pin_diameter_mm=c.axle,head_diameter_mm=c.axle+4,
+        head_thickness_mm=3.,shaft_length_mm=c.total+4.,
+        groove_center_mm=3.+c.total+1.2,groove_diameter_mm=c.axle-1.5,
+        groove_width_mm=2.,clip_inner_diameter_mm=c.axle-1.2,
+        clip_outer_diameter_mm=c.axle+4.,clip_thickness_mm=1.6,
+        clip_mouth_mm=c.axle-2.)
+    return {name:p.rotate((0,0,0),(1,0,0),180).translate(cq.Vector(0,0,c.total/2+3.))
+            for name,p in keeper_parts(k).items()}
+
 def elbow_parts(c=None,angle=60.,locked=True):
     c=c or Elbow()
     if not math.isfinite(angle) or abs(angle)>90:
         raise ValueError("angle outside prototype range")
     if locked and abs(angle/c.pitch-round(angle/c.pitch))>1e-8:
         raise ValueError("not indexed")
-    parts={"fixed":fixed_half(c),"moving":moving_half(c).rotate((0,0,0),(0,0,1),angle),"axle":pin(c,c.axle,0)}
+    parts={"fixed":fixed_half(c),"moving":moving_half(c).rotate((0,0,0),(0,0,1),angle)}
+    axle=retained_axle(c)
+    parts["axle"]=axle["grooved_pin"]
+    parts["axle_keeper"]=axle["snap_keeper"]
     if locked:
         parts["index_pin"]=pin(c,c.lock,c.lock_radius)
     return parts

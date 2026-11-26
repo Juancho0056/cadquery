@@ -1,2 +1,2 @@
 # Estado V2
-Uniones y codos exclusivamente. Conector 7d506cf: 159 PASS, run 45864630701. Codo 655ea33: 160 PASS, 9 FAIL por configuración por defecto (run 45865347079). Corrección del constructor, validación de sólidos y cinco pruebas de compatibilidad adicionales publicadas; CI pendiente. Retención axial, botón, recorrido y validación física pendientes. No apto para carga.
+Alcance exclusivo: uniones y codos. Conector 159 PASS (7d506cf). Codo corregido 3178ba3, CI en curso al comenzar. Eje central con ranura y clip exterior, 20 pruebas nuevas escritas incluyendo barrido desbloqueado. Pendientes resultado CI, retención del pasador angular y del puerto, accionamiento por botón y validación física. No apto para carga.

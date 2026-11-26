@@ -1,0 +1,2 @@
+# ADR-0032 — Captura axial del codo
+Se reutiliza KeeperConfig para eje Ø8 con cabeza Ø12, ranura y clip exterior Ø12. La horquilla y el rotor conservan el contrato V2. El clip limita extracción axial; su montaje elástico, tolerancias y resistencia requieren ensayo físico. Se agregan 19 poses desbloqueadas y una prueba de captura. El pasador angular sigue siendo removible; no se afirma que sea cautivo ni de botón. CI exacto pendiente. No apto para carga.

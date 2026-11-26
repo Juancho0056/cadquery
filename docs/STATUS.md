@@ -1,2 +1,2 @@
 # Estado V3
-Base ad12f17: usuario aportó 5/5 montaje y 63/63 V3 local (Python 3.12.5, CQ 2.8.0). Se incorpora codo modular con puertos integrales V2, puente elevado y cuello inferior; 36 pruebas nuevas escritas, CI pendiente. Desfase axial provisional, montaje del retenedor con puente, resistencia, resorte comercial y fijaciones reales por verificar. No apto para carga.
+ad12f17: 63/63 V3 local. 39902f7: 30/36 pruebas de codo local, seis interferencias en plegado. Corrección: pasadores orientados hacia fuera, punta 0.5 mm; retenedor dividido para montaje lateral. Se conservan todos los casos y se añaden 13. CI pendiente. Resorte comercial, retención efectiva de pasadores, resistencia y montaje físico no acreditados. No apto para carga.

@@ -1,0 +1,2 @@
+# ADR-0065 — Localizar interferencia de plegado
+Usuario reporta b3c3799, 180 grados, A/B 186.6039204861804 mm3. Se añade exportación exclusivamente diagnóstica con volumen de intersección, límites XYZ y clasificación longitudinal frente a zona de unión. No se relaja el gate de exportación normal. La causa exacta requiere localizar volumen real: salientes originales son hipótesis, no conclusión. No se cambia geometría. Backend manifold3d ausente en entorno de intervención; dos controles escritos sin ejecutar. No apto para impresión desde diagnóstico ni para carga.

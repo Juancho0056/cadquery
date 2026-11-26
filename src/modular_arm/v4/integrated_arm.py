@@ -68,10 +68,13 @@ def align_body(m,index,*,axis_z=None):
     m.apply_translation((-JOIN_X if index==1 else JOIN_X,0,CENTER_Z[index] if axis_z is None else axis_z))
     return m
 
-def joint_half(index,*,axis_z=None,reinforcement=0.,straight=False):
+def joint_half(index,*,axis_z=None,reinforcement=0.,straight=False,flush=False):
     """Construct exterior first; reuse the canonical V4 machining operations."""
     from modular_arm.v4.transition import finished_half
-    if straight:
+    if flush:
+        from modular_arm.v4.flush_arm import finished_flush
+        result=finished_flush(index)
+    elif straight:
         from modular_arm.v4.straight_arm import finished_straight
         result=finished_straight(index)
     else:
@@ -80,9 +83,14 @@ def joint_half(index,*,axis_z=None,reinforcement=0.,straight=False):
         raise ValueError("invalid integrated CAD half")
     return result
 
-def joining_half(index,*,axis_z=None,reinforcement=0.,straight=False):
+def joining_half(index,*,axis_z=None,reinforcement=0.,straight=False,flush=False):
     """Keep exterior up to the cut; use a buried spigot to avoid near-coincident skins."""
-    s=joint_half(index,axis_z=axis_z,reinforcement=reinforcement,straight=straight)
+    if flush:
+        from modular_arm.v4.flush_arm import AXES
+        if axis_z is not None and abs(axis_z-AXES[index])>1e-8:
+            raise ValueError("flush axis mismatch")
+        axis_z=AXES[index]
+    s=joint_half(index,axis_z=axis_z,reinforcement=reinforcement,straight=straight,flush=flush)
     direction=-1 if index==1 else 1
     # The measured original section is solid near the cut. The smaller
     # spigot deliberately stays well inside that section, not on its skin.
@@ -119,11 +127,16 @@ def preservation_report(original,integrated,index):
     return {"added_mm3":0. if added.is_empty else abs(float(added.volume)),
             "removed_mm3":0. if removed.is_empty else abs(float(removed.volume))}
 
-def integrated_half(archive,index,*,axis_z=None,reinforcement=0.,straight=False):
+def integrated_half(archive,index,*,axis_z=None,reinforcement=0.,straight=False,flush=False):
     """Boolean fuse, never concatenate disconnected shells or silently fall back."""
+    if flush:
+        from modular_arm.v4.flush_arm import AXES
+        if axis_z is not None and abs(axis_z-AXES[index])>1e-8:
+            raise ValueError("flush axis mismatch")
+        axis_z=AXES[index]
     tm=mesh_library()
     body=align_body(crop_terminal(original_mesh(archive,index),index),index,axis_z=axis_z)
-    half=cad_mesh(joining_half(index,axis_z=axis_z,reinforcement=reinforcement,straight=straight))
+    half=cad_mesh(joining_half(index,axis_z=axis_z,reinforcement=reinforcement,straight=straight,flush=flush))
     overlap=tm.boolean.intersection([body,half],engine="manifold")
     if overlap.is_empty or overlap.volume<=1:
         raise ValueError("insufficient overlap for integral union")
@@ -146,21 +159,29 @@ def axis_heights(offset=15.4):
         return dict(CENTER_Z)
     return {1:11.7-offset/2,5:11.7+offset/2}
 
-def parts(archive,angle=0.,travel=0.,*,offset=15.4,reinforcement=0.,straight=False):
+def parts(archive,angle=0.,travel=0.,*,offset=15.4,reinforcement=0.,straight=False,flush=False):
     if not math.isfinite(angle):
         raise ValueError("invalid angle")
     # Retain original indexing and travel contract.
     base=joint.parts(angle,travel)
+    if flush:
+        from modular_arm.v4.flush_arm import button
+        base['button']=button(travel)
     tm=mesh_library()
-    if straight:
+    if flush:
+        from modular_arm.v4.flush_arm import AXES
+        if straight or reinforcement or offset!=15.4:
+            raise ValueError('flush profile has fixed axes; omit straight, offset and reinforcement')
+        heights=AXES
+    elif straight:
         from modular_arm.v4.straight_arm import AXES
         if reinforcement or offset!=15.4:
             raise ValueError('straight profile has fixed axes; omit offset and reinforcement')
         heights=AXES
     else:
         heights=axis_heights(offset)
-    a=integrated_half(archive,1,axis_z=heights[1],straight=straight)
-    b=integrated_half(archive,5,axis_z=heights[5],reinforcement=reinforcement,straight=straight)
+    a=integrated_half(archive,1,axis_z=heights[1],straight=straight,flush=flush)
+    b=integrated_half(archive,5,axis_z=heights[5],reinforcement=reinforcement,straight=straight,flush=flush)
     b.apply_transform(tm.transformations.rotation_matrix(math.radians(angle),(0,0,1)))
     return {"arm_a_integrated":a,"arm_b_integrated":b,
             **{n:cad_mesh(s) for n,s in base.items() if n not in ("arm_a","arm_b")}}
@@ -200,13 +221,13 @@ def audit(parts):
 
 PRINTABLE=("arm_a_integrated","arm_b_integrated","button")
 
-def export(archive,destination,angle=0.,travel=0.,*,offset=15.4,reinforcement=0.,straight=False):
-    p=parts(archive,angle,travel,offset=offset,reinforcement=reinforcement,straight=straight)
+def export(archive,destination,angle=0.,travel=0.,*,offset=15.4,reinforcement=0.,straight=False,flush=False):
+    p=parts(archive,angle,travel,offset=offset,reinforcement=reinforcement,straight=straight,flush=flush)
     defects=audit(p)
     if defects:
         raise ValueError(f"interference mm3: {defects}")
     # Export neutral individual parts rather than the operating pose.
-    neutral=parts(archive,0.,0.,offset=offset,reinforcement=reinforcement,straight=straight) if (angle,travel)!=(0.,0.) else p
+    neutral=parts(archive,0.,0.,offset=offset,reinforcement=reinforcement,straight=straight,flush=flush) if (angle,travel)!=(0.,0.) else p
     dest=Path(destination)
     printable=dest/"prototype_printable"
     assembly=dest/"assembly_preview"
@@ -216,7 +237,7 @@ def export(archive,destination,angle=0.,travel=0.,*,offset=15.4,reinforcement=0.
         m.export(assembly/(n+".stl"))
     for n in PRINTABLE:
         m=neutral[n].copy()
-        if straight and n != 'button':
+        if (straight or flush) and n != 'button':
             # Tube end down, joint up. Rotate longitudinal X into build Z.
             sign=-1 if n=='arm_a_integrated' else 1
             m.apply_transform(mesh_library().transformations.rotation_matrix(sign*math.pi/2,(0,1,0)))
@@ -226,7 +247,7 @@ def export(archive,destination,angle=0.,travel=0.,*,offset=15.4,reinforcement=0.
               "printable":list(PRINTABLE),
               "metal_hardware":[{"item":"radial retainer","quantity":3,"spec":"nominal M3 dog-point; exact length and thread pending"},
                                 {"item":"compression spring","quantity":1,"spec":"OD 18 mm envelope; installed 13 mm, compressed 6 mm; commercial part pending"}],
-              "assembly_pose":{"angle":angle,"travel":travel,"axis_offset_mm":29. if straight else offset,"profile":"straight" if straight else "curved","b_reinforcement_mm":reinforcement},
+              "assembly_pose":{"angle":angle,"travel":travel,"axis_offset_mm":28.4 if flush else 29. if straight else offset,"profile":"flush" if flush else "straight" if straight else "curved","b_reinforcement_mm":reinforcement},
               "notes":"Only prototype_printable contains candidate printed parts. Assembly preview is not a print plate. Spring not exported as a solid. Printing orientation not qualified."}
     (dest/"manifest.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
     return p

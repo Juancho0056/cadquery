@@ -20,8 +20,14 @@ def mesh_library():
     return trimesh
 
 def require_solid(m,label):
-    if m.is_empty or not m.is_volume or len(m.split(only_watertight=False))!=1:
-        raise ValueError(f"{label}: expected one closed positive-volume body")
+    if m.is_empty:
+        raise ValueError(f"{label}: empty mesh")
+    components=m.split(only_watertight=False)
+    if not m.is_volume or len(components)!=1:
+        raise ValueError(f"{label}: expected one closed positive-volume body; "
+                         f"watertight={m.is_watertight}, winding={m.is_winding_consistent}, "
+                         f"volume={m.volume}, components={len(components)}, "
+                         f"component_volumes={[float(c.volume) for c in components]}")
     return m
 
 def cad_mesh(shape):
@@ -70,6 +76,21 @@ def joint_half(index):
         raise ValueError("invalid integrated CAD half")
     return result
 
+def joining_half(index):
+    """Keep exterior up to the cut; use a buried spigot to avoid near-coincident skins."""
+    s=joint_half(index)
+    direction=-1 if index==1 else 1
+    # The measured original section is solid near the cut. The smaller
+    # spigot deliberately stays well inside that section, not on its skin.
+    start=direction*(JOIN_X-.5)
+    cut=cq.Solid.makeBox(100,200,200,cq.Vector(JOIN_X if index==5 else -JOIN_X-100,-100,-100))
+    s=s.cut(cut)
+    spigot=cq.Solid.makeCylinder(11.,2.,cq.Vector(start,0,CENTER_Z[index]),cq.Vector(direction,0,0))
+    s=s.fuse(spigot).clean()
+    if not s.isValid() or len(s.Solids())!=1:
+        raise ValueError("invalid joining half")
+    return s
+
 def protected_region(mesh,index):
     """Longitudinal material beyond the explicitly allowed 2 mm join zone."""
     tm=mesh_library()
@@ -98,11 +119,17 @@ def integrated_half(archive,index):
     """Boolean fuse, never concatenate disconnected shells or silently fall back."""
     tm=mesh_library()
     body=align_body(crop_terminal(original_mesh(archive,index),index),index)
-    half=cad_mesh(joint_half(index))
+    half=cad_mesh(joining_half(index))
     overlap=tm.boolean.intersection([body,half],engine="manifold")
     if overlap.is_empty or overlap.volume<=1:
         raise ValueError("insufficient overlap for integral union")
-    result=require_solid(tm.boolean.union([body,half],engine="manifold"),f"integrated_{index}")
+    # Keep exact manifold topology from the boolean; do not discard small
+    # components or repair by filling holes, which could alter the original.
+    raw=tm.boolean.union([body,half],engine="manifold")
+    try:
+        result=require_solid(raw,f"integrated_{index}")
+    except ValueError as exc:
+        raise ValueError(f"{exc}; overlap_mm3={overlap.volume:.6f}") from exc
     report=preservation_report(body,result,index)
     if max(report.values())>.05:
         raise ValueError(f"original longitudinal body modified: {report}")

@@ -51,3 +51,24 @@ def test_reinforced_core_valid(index):
     assert s.isValid() and len(s.Solids())==1
     assert original.intersect(core).cut(s).Volume()<1e-6
     assert s.intersect(core).cut(original).Volume()<1e-6
+
+@pytest.mark.parametrize("index",[1,5])
+def test_buried_joining_spigot(index):
+    from modular_arm.v4.integrated_arm import joining_half,JOIN_X,CENTER_Z
+    import cadquery as cq
+    s=joining_half(index)
+    direction=-1 if index==1 else 1
+    x=direction*(JOIN_X+1.)
+    section=s.intersect(cq.Solid.makeBox(.02,100,100,cq.Vector(x-.01,-50,-50)))
+    assert section.BoundingBox().ylen==pytest.approx(22.,abs=.01)
+    assert section.BoundingBox().zlen==pytest.approx(22.,abs=.01)
+    assert s.isValid() and len(s.Solids())==1
+
+def test_disconnected_mesh_rejected():
+    from modular_arm.v4.integrated_arm import require_solid,mesh_library
+    tm=mesh_library()
+    a=tm.creation.box()
+    b=a.copy()
+    b.apply_translation((3,0,0))
+    with pytest.raises(ValueError,match="components=2"):
+        require_solid(tm.util.concatenate([a,b]),"negative control")

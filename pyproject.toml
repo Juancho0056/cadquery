@@ -11,6 +11,7 @@ dependencies = ["cadquery>=2.4,<3"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "ruff>=0.8,<1"]
+reference = ["trimesh>=4.7,<5", "manifold3d>=3,<4"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

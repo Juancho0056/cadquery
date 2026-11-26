@@ -1,2 +1,2 @@
 # V4
-e9c3b30: 58/58 local. Variante de terminales con limitación de giro añadida, 12 pruebas escritas. Vista local con --rigid. Acoplamiento real, bloqueo de B, especificación de tornillo, resistencia y cinemática longitudinal sin acreditar. No apto para carga.
+Dirección corregida por usuario: eliminar Y/lengüeta originales y sustituirlas por mitades V4 integrales. Nueva ruta integrated_arm.py, sin conexiones secundarias. Booleanos locales sobre ZIP original, no redistribuido. Backend opcional no disponible en entorno de intervención; ejecución local necesaria. No se afirma compatibilidad completa del sistema extensible ni resistencia. Versiones previas conservadas como históricas, no arquitectura objetivo.

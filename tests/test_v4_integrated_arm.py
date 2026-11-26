@@ -72,3 +72,32 @@ def test_disconnected_mesh_rejected():
     b.apply_translation((3,0,0))
     with pytest.raises(ValueError,match="components=2"):
         require_solid(tm.util.concatenate([a,b]),"negative control")
+
+def test_intersection_volume_zero_contact():
+    import numpy as np
+    from modular_arm.v4.integrated_arm import mesh_library,intersection_volume
+    tm=mesh_library()
+    face=tm.Trimesh(vertices=np.array([[0.,0.,0.],[1.,0.,0.],[0.,1.,0.]]),
+                    faces=[[0,1,2]],process=False)
+    assert intersection_volume(face)==0.
+
+def test_intersection_volume_positive_control():
+    from modular_arm.v4.integrated_arm import mesh_library,intersection_volume
+    tm=mesh_library()
+    box=tm.creation.box(extents=(2,3,4))
+    assert intersection_volume(box)==pytest.approx(24.)
+    box.apply_translation((1000.,2000.,3000.))
+    assert intersection_volume(box)==pytest.approx(24.)
+    box.invert()
+    with pytest.raises(ValueError,match="invalid nonzero intersection"):
+        intersection_volume(box)
+
+def test_audit_touch_and_penetration():
+    from modular_arm.v4.integrated_arm import mesh_library,audit
+    tm=mesh_library()
+    a=tm.creation.box(extents=(2,2,2))
+    b=a.copy()
+    b.apply_translation((2,0,0))
+    assert audit({"a":a,"b":b})==[]
+    b.apply_translation((-.5,0,0))
+    assert audit({"a":a,"b":b})==[("a","b",pytest.approx(2.))]

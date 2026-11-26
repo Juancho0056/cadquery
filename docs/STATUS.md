@@ -1,2 +1,2 @@
 # V4
-94b240e: usuario reporta fallo de unión integrada obj1. Corrección candidata: espiga interna integral y diagnóstico topológico detallado, tres pruebas adicionales. Sin relajación de validación. Pendiente confirmar unión real, preservación y poses. No apto para carga.
+f7bef44: usuario certifica 28/28 pruebas locales (71.92 s, 8 warnings trimesh). Integración A/B y preservación aprobadas en posiciones ensayadas. Auditoría de volumen sin centro de masa añadida; tres pruebas nuevas, por ejecutar localmente con warnings como errores. Plegado 135/180 colisiona; extensión completa, hardware y resistencia no acreditados. No apto para carga.

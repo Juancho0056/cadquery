@@ -147,6 +147,26 @@ def parts(archive,angle=0.,travel=0.):
     return {"arm_a_integrated":a,"arm_b_integrated":b,
             **{n:cad_mesh(s) for n,s in base.items() if n not in ("arm_a","arm_b")}}
 
+def intersection_volume(mesh):
+    """Signed tetrahedral volume without computing center of mass.
+    A zero-volume contact is not a solid penetration. Reject invalid nonzero
+    results rather than masking them. Use a local origin for numerical stability.
+    """
+    if mesh.is_empty:
+        return 0.
+    t=np.asarray(mesh.triangles,dtype=np.float64)
+    if not np.isfinite(t).all():
+        raise ValueError("nonfinite intersection triangles")
+    t=t-t[0,0]
+    volume=float(np.einsum("ij,ij->i",t[:,0],np.cross(t[:,1],t[:,2])).sum()/6.)
+    if not math.isfinite(volume):
+        raise ValueError("nonfinite intersection volume")
+    if abs(volume)<=1e-9:
+        return 0.
+    if volume<0 or not mesh.is_watertight or not mesh.is_winding_consistent:
+        raise ValueError(f"invalid nonzero intersection: {volume} mm3")
+    return volume
+
 def audit(parts):
     from itertools import combinations
     tm=mesh_library()
@@ -155,8 +175,9 @@ def audit(parts):
         if np.any(s.bounds[1]<t.bounds[0]) or np.any(t.bounds[1]<s.bounds[0]):
             continue
         q=tm.boolean.intersection([s,t],engine="manifold")
-        if not q.is_empty and q.volume>.01:
-            defects.append((a,b,float(q.volume)))
+        volume=intersection_volume(q)
+        if volume>.01:
+            defects.append((a,b,volume))
     return defects
 
 PRINTABLE=("arm_a_integrated","arm_b_integrated","button")

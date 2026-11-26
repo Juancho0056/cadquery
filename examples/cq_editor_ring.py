@@ -1,9 +1,24 @@
-"""Open in CQ-editor. Project root must be the current folder."""
+import os
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path.cwd() / "src"))
-from modular_arm.components.experimental_ring import make_experimental_ring
-from modular_arm.config.ring import ExperimentalRingConfig
 
-ring = make_experimental_ring(ExperimentalRingConfig())
-show_object(ring, name="experimental_ring_24t_not_functional")
+# CQ-editor may execute a string without a usable __file__.
+_candidates = []
+if os.environ.get("MODULAR_ARM_ROOT"):
+    _candidates.append(Path(os.environ["MODULAR_ARM_ROOT"]))
+if globals().get("__file__"):
+    _candidates.append(Path(__file__).resolve().parent)
+_candidates.append(Path.cwd())
+for _start in _candidates:
+    for _root in (_start, *_start.parents):
+        if (_root / "src" / "modular_arm" / "__init__.py").is_file():
+            sys.path.insert(0, str(_root / "src"))
+            break
+    else:
+        continue
+    break
+else:
+    raise RuntimeError("Set MODULAR_ARM_ROOT to the cloned cadquery repository and restart CQ-editor.")
+
+from modular_arm.components.experimental_ring import make_experimental_ring
+show_object(make_experimental_ring(), name='experimental_ring')

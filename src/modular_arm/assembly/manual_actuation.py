@@ -17,6 +17,7 @@ class ActuationConfig:
     key_width_mm: float=3.
     key_depth_mm: float=2.
     axial_clearance_mm: float=.4
+    key_clearance_mm: float=.2
 
     def __post_init__(self):
         for n in self.__dataclass_fields__:
@@ -34,6 +35,21 @@ def release_commands(c,mode):
     q=c.enclosure.contact.full_release_deg
     return {Mode.A:(q,0.),Mode.B:(0.,0.),Mode.C:(0.,q)}[mode]
 
+def key_geometry(c,reverse=False,release=0.,clearance=0.):
+    """One fixed local key profile; pocket follows the pawl, not the world."""
+    p=c.enclosure.contact
+    a=p.joint.cartridge
+    x=-p.pivot_x_mm if reverse else p.pivot_x_mm
+    y=p.pivot_y_mm
+    top=a.head_thickness_mm+a.fork_wall_mm+a.axial_clearance_per_side_mm+p.track.follower_clearance_mm/2+p.track.follower_thickness_mm
+    if reverse:
+        top+=p.track.track_thickness_mm+p.track.track_axial_gap_mm
+    offset=(p.pivot_bore_mm/2+c.shaft_diameter_mm/2)/2
+    # Mirror the offset as well as the direction of rotation.
+    key=cq.Workplane("XY").box(c.key_width_mm+2*clearance,c.key_width_mm+2*clearance,c.key_depth_mm+.5+clearance,
+        centered=(True,True,False)).translate((x+(-offset if reverse else offset),y,top-c.key_depth_mm-clearance)).val()
+    return key.rotate((x,y,0),(x,y,1),release if reverse else -release)
+
 def actuator_geometry(c,reverse=False,release=0.):
     """Axis at existing pivot. Key enters top face of pawl; shaft ends at that face."""
     e=c.enclosure
@@ -48,10 +64,7 @@ def actuator_geometry(c,reverse=False,release=0.):
     lid_top=a.head_thickness_mm+e.stack
     shaft=cq.Solid.makeCylinder(c.shaft_diameter_mm/2,lid_top-top+c.axial_clearance_mm,
         cq.Vector(x,y,top))
-    # Key is offset from axis to transmit torque, overlapping shaft.
-    offset=(p.pivot_bore_mm/2+c.shaft_diameter_mm/2)/2
-    key=cq.Workplane("XY").box(c.key_width_mm,c.key_width_mm,c.key_depth_mm+.5,
-        centered=(True,True,False)).translate((x+offset,y,top-c.key_depth_mm)).val()
+    key=key_geometry(c,reverse,0.)
     handle=cq.Solid.makeCylinder(c.handle_radius_mm,c.handle_thickness_mm,
         cq.Vector(x,y,lid_top+c.axial_clearance_mm))
     # The upper shaft is bored axially for an independent fixed support pin.
@@ -73,7 +86,7 @@ def manual_parts(c=None,mode=Mode.B):
         x=-p.pivot_x_mm if reverse else p.pivot_x_mm
         y=p.pivot_y_mm
         act=actuator_geometry(c,reverse,q)
-        parts[prefix+"_pawl"]=parts[prefix+"_pawl"].cut(act)
+        parts[prefix+"_pawl"]=parts[prefix+"_pawl"].cut(key_geometry(c,reverse,q,c.key_clearance_mm))
         parts["lid"]=parts["lid"].cut(cq.Solid.makeCylinder(
             (c.shaft_diameter_mm+c.shaft_clearance_mm)/2,e.stack,
             cq.Vector(x,y,a.head_thickness_mm+e.split_z)))

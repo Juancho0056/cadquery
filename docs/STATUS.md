@@ -1,3 +1,4 @@
 # Estado
-Línea base exacta: 80 passed in 25.38s, commit 5054722, GitHub Actions run 45746122034.
-Fase 02: variante integrada de actuadores coaxiales con llave, pasos de tapa y alojamiento de llave en las uñas. Cinco pruebas nuevas escritas y auditoría explícita de interferencias para A/B/C; resultados pendientes. P01/P02 parciales: no hay guía de corredera ni transmisión común. P03–P07 pendientes. No afirmar interbloqueo ni retorno automático. No apto para carga.
+Línea base exacta: 85 passed in 18.18s (761b149, run 45746767414).
+Nueva intervención: llave coaxial especular, bolsillo con holgura nominal y cuatro pruebas de interfaz. Auditoría de interferencias A/B/C incorporada al CI obligatorio con evidencia JSON. Resultado del nuevo commit pendiente.
+P01 guía común pendiente; P02 parcial; P03 retorno pendiente; P04 detentes pendientes; P05 seguro cautivo pendiente; P06 interfaz de brazo pendiente; P07 parcial. No apto para carga.

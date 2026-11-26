@@ -16,8 +16,13 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install -e ".[dev]" "cadquery==2.8.0"
       - run: python -m pytest -q --junitxml=pytest-results.xml
+      - name: Audit integrated coaxial actuation
+        if: always()
+        run: python scripts/audit_manual_actuation.py > actuation-audit.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: cad-validation-results
-          path: pytest-results.xml
+          path: |
+            pytest-results.xml
+            actuation-audit.json

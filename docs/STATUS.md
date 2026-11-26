@@ -1,2 +1,2 @@
 # Estado V3
-Núcleo b2b5486: CI en curso al comenzar. Banco retenido independiente: camisa radial, anillo axial y cuatro posiciones de fijación nominal. Seis pruebas nuevas escritas; CI pendiente. Fijaciones, topes del émbolo, retorno físico, ensamblaje y resistencia no certificados. No apto para carga.
+Banco retenido c96dcb4 visualizado por usuario; CI 45873560214 en curso al comenzar. Topes superior e inferior integrados, camisa ensanchada para fijaciones, ocho pruebas adicionales. Pendientes CI exacto, selección del resorte, fijaciones reales, montaje, conexión estructural del rotor y resistencia. No apto para carga.

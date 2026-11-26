@@ -29,8 +29,18 @@ def test_variant_core_and_terminal(index,offset):
     bb=s.intersect(cq.Solid.makeBox(.02,100,100,cq.Vector(x-.01,-50,-50))).BoundingBox()
     assert (bb.zmin+bb.zmax)/2==pytest.approx(z,abs=.15)
 
-def test_aligned_full_fold_is_not_clear():
+def test_default_axis_heights_exact():
+    from modular_arm.v4.integrated_arm import CENTER_Z
+    assert axis_heights(15.4)==CENTER_Z
+
+def test_aligned_longitudinal_envelopes_overlap_when_folded():
+    # Conservative envelope control, not a claim about the CAD necks.
     z=axis_heights(0.)
-    a=finished_half(1,axis_z=z[1])
-    b=joint.turn(finished_half(5,axis_z=z[5]),180)
-    assert a.intersect(b).Volume()>1.
+    a=cq.Solid.makeCylinder(13.95,30,cq.Vector(-46,0,z[1]),cq.Vector(-1,0,0))
+    b=cq.Solid.makeCylinder(13.95,30,cq.Vector(46,0,z[5]),cq.Vector(1,0,0))
+    assert a.intersect(b).Volume()<1e-6
+    assert a.intersect(joint.turn(b,180)).Volume()>1.
+
+def test_fold_intersection_detector_positive_control():
+    a=cq.Solid.makeBox(10,10,10)
+    assert a.intersect(a.translate(cq.Vector(5,0,0))).Volume()==pytest.approx(500.)

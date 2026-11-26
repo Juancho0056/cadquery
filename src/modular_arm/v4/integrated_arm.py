@@ -138,6 +138,8 @@ def integrated_half(archive,index,*,axis_z=None):
 def axis_heights(offset=15.4):
     if not math.isfinite(offset) or not 0<=offset<=15.4:
         raise ValueError("offset must be between 0 and 15.4 mm")
+    if offset == 15.4:
+        return dict(CENTER_Z)
     return {1:11.7-offset/2,5:11.7+offset/2}
 
 def parts(archive,angle=0.,travel=0.,*,offset=15.4):

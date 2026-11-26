@@ -27,6 +27,10 @@ class CommonSelectorConfig:
     pad_length_mm: float = 9.0
     lock_extension_mm: float = 4.0
     end_clearance_mm: float = 0.3
+    index_pin_diameter_mm: float = 2.5
+    index_pin_clearance_mm: float = 0.4
+    index_head_diameter_mm: float = 6.0
+    index_head_height_mm: float = 3.0
 
     def __post_init__(self):
         for name in self.__dataclass_fields__:
@@ -34,6 +38,10 @@ class CommonSelectorConfig:
                 v = getattr(self, name)
                 if not math.isfinite(v) or v <= 0:
                     raise ValueError(name)
+        if self.index_pin_diameter_mm+self.index_pin_clearance_mm >= min(self.stroke_mm,self.slider_width_mm):
+            raise ValueError("selector index holes overlap or exceed crossbar")
+        if self.index_head_diameter_mm <= self.index_pin_diameter_mm+self.index_pin_clearance_mm:
+            raise ValueError("index head must exceed bore")
         if self.lever_radius_mm <= self.actuation.handle_radius_mm:
             raise ValueError("lever must extend beyond handle")
         if self.rail_length_mm <= 2*self.half_span_mm + 2*self.stroke_mm:
@@ -100,6 +108,9 @@ def slider(c,displacement):
         x=sign*(c.half_span_mm-c.follower_radius_mm-c.neutral_gap_mm-c.pusher_width_mm/2)
         pad=box_at(x,y,z,c.pusher_width_mm,c.pad_length_mm+c.slider_width_mm+3.,c.slider_height_mm)
         cross=cross.fuse(pad)
+    for x in (-c.stroke_mm,0.,c.stroke_mm):
+        cross=cross.cut(cq.Solid.makeCylinder((c.index_pin_diameter_mm+c.index_pin_clearance_mm)/2,
+            c.slider_height_mm,cq.Vector(x,c.follower_y_mm+c.pad_length_mm,z)))
     return cross.translate(cq.Vector(displacement,0,0))
 
 
@@ -131,7 +142,16 @@ def guide_parts(c):
     return bottom,sides[1]
 
 
-def common_selector_parts(c=None,mode=Mode.B):
+def index_pin(c):
+    y=c.follower_y_mm+c.pad_length_mm
+    z=c.drive_z_mm
+    length=c.slider_height_mm+c.rail_clearance_mm+c.rail_height_mm
+    shaft=cq.Solid.makeCylinder(c.index_pin_diameter_mm/2,length,cq.Vector(0,y,z))
+    head=cq.Solid.makeCylinder(c.index_head_diameter_mm/2,c.index_head_height_mm,cq.Vector(0,y,z+length))
+    return shaft.fuse(head)
+
+
+def common_selector_parts(c=None,mode=Mode.B,*,index_inserted=True):
     c=c or CommonSelectorConfig()
     parts=manual_parts(c.actuation,mode)
     q=c.contact.full_release_deg
@@ -143,7 +163,14 @@ def common_selector_parts(c=None,mode=Mode.B):
                   12.,c.follower_y_mm+c.pad_length_mm-c.contact.pivot_y_mm+4.,3.)
     # Platform and tongue overlap by design at their shared interface.
     parts["lid"]=parts["lid"].fuse(tongue).fuse(bottom).fuse(outer)
+    # Through hole in roof only; the pin indexes the translating crossbar.
+    roof_z=c.drive_z_mm+c.slider_height_mm+c.rail_clearance_mm
+    parts["lid"]=parts["lid"].cut(cq.Solid.makeCylinder(
+        (c.index_pin_diameter_mm+c.index_pin_clearance_mm)/2,c.rail_height_mm+1.,
+        cq.Vector(0,c.follower_y_mm+c.pad_length_mm,roof_z)))
     parts["common_selector"]=slider(c,slider_displacement(c,mode))
+    if index_inserted:
+        parts["selector_index_pin"]=index_pin(c)
     from modular_arm.mechanisms.retention import KeeperConfig,keeper_parts
     p=c.contact
     a=p.joint.cartridge

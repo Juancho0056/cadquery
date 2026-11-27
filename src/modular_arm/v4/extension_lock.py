@@ -8,8 +8,18 @@ from modular_arm.v4 import extension_pair as e
 SCREW_CENTER=(105.79920959472656,96.245361328125)
 BOSS_Z=135.545
 BOSS_TOP_X=167.030517578125
-OFFSETS=(-4.,-2.,0.,2.,4.)
-DEPTHS=(35.,65.,95.)
+# Measured centers at original inner X=116: Z=24.767 + 5*n.
+HOLE_FIRST_Z=24.767
+HOLE_PITCH=5.
+HOLE_COUNT=14
+# Same axial registration on both arms at relative clock 0.
+def indexed_depth(index):
+    if not isinstance(index,int) or not 0<=index<HOLE_COUNT:
+        raise ValueError("invalid index")
+    return HOLE_FIRST_Z+HOLE_PITCH*index+e.MOUTH_Z-BOSS_Z
+
+OFFSETS=(14.,15.,16.,17.,18.,19.,20.)
+DEPTHS=tuple(indexed_depth(i) for i in (0,6,12))
 
 def screw_transform(side,depth,offset,clock=0.):
     if side not in ("a","b") or not all(map(math.isfinite,(depth,offset,clock))):
@@ -17,7 +27,7 @@ def screw_transform(side,depth,offset,clock=0.):
     # Head at source Z=0, screw points toward negative source X of outer tube.
     cx,cy=SCREW_CENTER
     local=np.array([[0,0,-1,BOSS_TOP_X+offset],[1,0,0,0],[0,-1,0,BOSS_Z],[0,0,0,1]],float)
-    local[:3,3]+=np.array([0,e.ia.CENTERS[5][1]-cx,BOSS_Z*0+cy])
+    local[:3,3]+=np.array([0,e.ia.CENTERS[5][1]-cx,cy])
     # Map screw XY center to outer Y/Z datum, not its print plate coordinates.
     if side=="a":
         outer=e.counterpart_transform("a",depth,0.)
@@ -44,7 +54,9 @@ def scan(archive,destination):
             for offset in OFFSETS:
                 screw=source.copy()
                 screw.apply_transform(screw_transform(side,depth,offset))
-                row={"side":side,"depth_mm":depth,"head_offset_mm":offset,"clock_deg":0.}
+                row={"side":side,"depth_mm":depth,"head_offset_mm":offset,"clock_deg":0.,
+                     "inner_hole_z_mm":depth-(e.MOUTH_Z-BOSS_Z),
+                     "tip_outer_source_x_mm":BOSS_TOP_X+offset-26.69}
                 try:
                     for name,body in (("outer",outer),("inner",inner)):
                         row[name+"_overlap_mm3"]=ia.intersection_volume(tm.boolean.intersection([body,screw],engine="manifold"))
@@ -55,7 +67,7 @@ def scan(archive,destination):
     dest=Path(destination)
     dest.mkdir(parents=True,exist_ok=True)
     result={"status":"transverse_screw_diagnostic_only","rows":rows,
-            "assumptions":{"source":22,"boss_source_z_mm":BOSS_Z,"boss_source_x_mm":BOSS_TOP_X,"clock_deg":0.},
+            "assumptions":{"source":22,"boss_source_z_mm":BOSS_Z,"boss_source_x_mm":BOSS_TOP_X,"clock_deg":0., "hole_first_z_mm":HOLE_FIRST_Z,"hole_pitch_mm":HOLE_PITCH,"hole_count":HOLE_COUNT},
             "limitations":"Estimated boss datum; overlap in modeled threads is reported, never ignored. No lock, thread engagement, safe stroke or retention certified."}
     (dest/"report.json").write_text(json.dumps(result,indent=2),encoding="utf-8")
     return result

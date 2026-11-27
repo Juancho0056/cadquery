@@ -1,11 +1,11 @@
-"""45 mm circular housing, two split keepers, internal screw cap.
+"""45 mm circular housing, two split keepers, internal bayonet cap.
 All dimensions mm. Independent unloaded fit candidate.
 """
 import math
 from itertools import combinations
 import cadquery as cq
 from modular_arm.v43 import joint as old
-from modular_arm.v43.closure_coupons import thread,turn
+from modular_arm.v43.closure_coupons import turn
 from modular_arm.v3.locking_core import Core,cyl,profile_points
 from modular_arm.v4.transition import rounded_wire
 V=cq.Vector
@@ -17,9 +17,16 @@ KEEPER_OUT=17.6
 POCKET=19.8
 SCALE=.72
 STEM=7.92
-PITCH=3.
-THREAD_ROOT=19.45
-THREAD_DEPTH=.85
+LUG_ROOT=19.45
+LUG_TIP=21.05
+ENTRY_ANGLES=(45.,165.,285.)
+LOCK_ANGLE=30.
+LUG_HALF=8.
+TRACK_HALF=9.
+LUG_Z=36.1
+LUG_HEIGHT=2.4
+TRACK_Z=35.8
+TRACK_HEIGHT=3.0
 TOP=41.4
 CAP_Z=34.4
 TOOTH_TOP=25.
@@ -55,9 +62,20 @@ def lower():
 def guide(a,z,h,clear=0.):
     return turn(cq.Solid.makeBox(2.0+clear,3.+2*clear,h,V(18.9,-1.5-clear,z)),a)
 
+def sector(a,lo,hi,z,h,sweep):
+    b=cq.Solid.makeCylinder(hi,h,V(0,0,z),V(0,0,1),sweep)
+    return turn(b.cut(cyl(lo,z-1.,h+2.)),a)
+
+def bayonet_tracks(b):
+    for a in ENTRY_ANGLES:
+        # Vertical entrance plus blind circumferential track. No helix.
+        b=b.cut(sector(a-TRACK_HALF,19.35,21.35,TRACK_Z,7.,2*TRACK_HALF))
+        b=b.cut(sector(a-TRACK_HALF,19.35,21.35,TRACK_Z,TRACK_HEIGHT,LOCK_ANGLE+2*TRACK_HALF))
+    return b
+
 def upper():
     b=blank(5).cut(cyl(JOURNAL+.3,12.,2.7)).cut(cyl(POCKET,14.7,27.))
-    b=b.cut(thread(THREAD_ROOT,THREAD_DEPTH+.4,2.6,15.).translate(V(0,0,29.2)))
+    b=bayonet_tracks(b)
     for a in (90.,270.): b=b.cut(guide(a,20.,22.,.2))
     return old.socket(b,5)
 
@@ -75,8 +93,9 @@ def cartridge():
     return valid(b,"cartridge")
 
 def cap():
-    b=ring(THREAD_ROOT,STEM+.35,CAP_Z,7.2)
-    b=b.fuse(thread(THREAD_ROOT,THREAD_DEPTH,1.8,5.5).translate(V(0,0,35.2)))
+    b=ring(LUG_ROOT,STEM+.35,CAP_Z,7.2)
+    for a in ENTRY_ANGLES:
+        b=b.fuse(sector(a+LOCK_ANGLE-LUG_HALF,LUG_ROOT-.2,LUG_TIP,LUG_Z,LUG_HEIGHT,2*LUG_HALF))
     b=b.fuse(ring(R,STEM+.35,41.45,2.15))
     for a in range(15,360,30):
         t=math.radians(a)
@@ -127,8 +146,10 @@ def path_samples(p):
         for dz in (35.,15.,5.,2.,0.):
             sample(n,p[n].translate(V(0,0,dz)),installed,lift=dz)
         installed.append(n)
-    for dz in (12.,9.,6.,3.,2.25,1.5,.75,0.):
-        sample("cap",turn(p["cap"],dz/PITCH*360).translate(V(0,0,dz)),installed,lift=dz)
+    for dz in (12.,9.,6.,4.,3.,2.,1.,.5,0.):
+        sample("cap_insert",turn(p["cap"],-LOCK_ANGLE).translate(V(0,0,dz)),installed,lift=dz,angle=-LOCK_ANGLE)
+    for a in (-30.,-25.,-20.,-15.,-10.,-5.,0.):
+        sample("cap_turn",turn(p["cap"],a),installed,lift=0.,angle=a)
     for dz in (5.,2.,0.):
         sample("key",p["key"].translate(V(0,0,dz)),installed+["cap"],lift=dz)
     return rows
@@ -139,4 +160,6 @@ def retention(p):
             "sleeve":overlap(p["keeper_0"].translate(V(0,2.,0)),p["cartridge"]),
             "cap_pull":overlap(p["cap"].translate(V(0,0,1.)),p["head_b"]),
             "key_minus":overlap(turn(p["cap"],-5.),p["key"]),
-            "key_plus":overlap(turn(p["cap"],5.),p["key"])}
+            "key_plus":overlap(turn(p["cap"],5.),p["key"]),
+            "end_stop":overlap(turn(p["cap"],5.),p["head_b"]),
+            "unlocked_pull_clear":overlap(turn(p["cap"],-LOCK_ANGLE).translate(V(0,0,2.)),p["head_b"])}

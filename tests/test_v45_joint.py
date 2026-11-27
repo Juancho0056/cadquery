@@ -13,4 +13,6 @@ def test_poses(parts):
 def test_path(parts):
     assert all(x["overlap_mm3"]<=j.TOL for x in j.path_samples(parts))
 def test_retention(parts):
-    assert min(j.retention(parts).values())>j.TOL
+    r=j.retention(parts)
+    assert r.pop("unlocked_pull_clear")<=j.TOL
+    assert min(r.values())>j.TOL

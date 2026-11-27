@@ -36,7 +36,7 @@ def threaded():
     base=ring(34.,21.,0.,3.).fuse(ring(ROOT,21.,2.8,12.2))
     base=base.fuse(ridge.translate(V(0,0,4.5)))
     # Outer collar closes against the broad base face, not against the clutch.
-    cap=ring(34.,ROOT+CLEAR,3.,12.).fuse(ring(34.,21.,14.8,2.2))
+    cap=ring(34.,ROOT+CLEAR,3.,12.5).fuse(ring(34.,21.,15.3,2.2))
     cutter=thread(ROOT+CLEAR,CREST-ROOT,2.35,12.).translate(V(0,0,4.5-PITCH))
     cap=cap.cut(cutter)
     # Accessible external antirotation key at the seam, installed radially.
@@ -50,12 +50,12 @@ def bayonet():
     base=ring(34.,21.,0.,3.).fuse(ring(ROOT,21.,2.8,12.2))
     for angle in ANGLES:
         base=base.fuse(wedge(angle,25.8,29.,8.,2.5,22.))
-    cap=ring(34.,26.4,3.,12.).fuse(ring(34.,21.,14.8,2.2))
+    cap=ring(34.,26.4,3.,12.5).fuse(ring(34.,21.,15.3,2.2))
     for angle in ANGLES:
-        # Open axial entrance, followed by stepped cam pockets.
+        # Open axial entrance, followed by a constant-height circumferential track.
         cap=cap.cut(wedge(angle-1,26.2,29.4,2.9,8.,24.))
         for k in range(8):
-            cap=cap.cut(wedge(angle-1-5*(k+1),26.2,29.4,7.7-.1*k,3.3,30.))
+            cap=cap.cut(wedge(angle-1-5*(k+1),26.2,29.4,7.0,4.0,30.))
     return valid(base,"bayonet base"),valid(cap,"bayonet cap")
 
 def lock_pair(base,cap):
@@ -69,20 +69,33 @@ def lock_pair(base,cap):
     pin=cq.Solid.makeBox(5.8,3.,5.,V(28.2,-1.5,.5))
     return valid(base,"keyed base"),valid(cap,"keyed cap"),valid(pin,"seam key")
 
+def path_samples(name,base,cap):
+    if name=="thread":
+        poses=[(z/PITCH*360,z) for z in (12.,9.,6.,3.,2.25,1.5,.75,0.)]
+    else:
+        poses=[(0.,z) for z in (12.,8.,5.,2.,0.)]+[(a,0.) for a in range(5,41,5)]
+    return [{"angle_deg":a,"lift_mm":z,"overlap_mm3":base.intersect(turn(cap,a).translate(V(0,0,z))).Volume()} for a,z in poses]
+
 def export(destination):
     dest=Path(destination); dest.mkdir(parents=True,exist_ok=True)
     report={"status":"closure_fit_coupons_only","variants":{}}
     for name,fn in (("thread",threaded),("bayonet",bayonet)):
         base,cap=fn()
+        samples=path_samples(name,base,cap)
         # Bayonet final position after rotating cap +40 degrees.
         if name=="bayonet": cap=turn(cap,40.)
         base,cap,pin=lock_pair(base,cap)
         folder=dest/name; folder.mkdir(exist_ok=True)
+        for old in (*folder.glob("*.stl"),*folder.glob("*.step")): old.unlink()
         overlap=base.intersect(cap).Volume()
         key_overlap=pin.intersect(base).Volume()+pin.intersect(cap).Volume()
+        obstruction=[pin.intersect(turn(cap,a)).Volume() for a in (-5.,5.)]
+        pull=base.intersect(cap.translate(V(0,0,2.))).Volume()
+        passed=max(overlap,key_overlap,*(x["overlap_mm3"] for x in samples))<=.01 and min(obstruction)> .01 and pull>.01
         report["variants"][name]={"seated_overlap_mm3":overlap,"key_overlap_mm3":key_overlap,
-            "status":"candidate" if max(overlap,key_overlap)<=.01 else "interference_detected"}
-        if max(overlap,key_overlap)>.01:
+            "path_samples":samples,"key_rotation_obstruction_mm3":obstruction,"axial_obstruction_at_2mm_mm3":pull,
+            "status":"candidate" if passed else "diagnostic_failed"}
+        if not passed:
             continue
         for label,shape in (("base",base),("cap",cap.rotate((0,0,0),(1,0,0),180)),("key",pin)):
             shape=shape.translate(V(0,0,-shape.BoundingBox().zmin))

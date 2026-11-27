@@ -9,7 +9,10 @@ from modular_arm.v4 import modular_chain as c, extension_clocking as clock
 m,ia=c.m,c.ia
 
 def frames(angles,indices):
-    c.frames(angles,indices)  # canonical validation
+    if not angles or len(indices)!=len(angles)+1:
+        raise ValueError('N joints require N+1 segments')
+    for idx in indices: c.segment_transform(idx)
+    for angle in angles: m.joint.parts(angle,7.)
     f=[np.eye(4)]
     for j in range(len(angles)-1):
         f.append(f[-1]@c.rotation(angles[j])@c.segment_transform(indices[j+1])@clock.module_transform(180.))
@@ -19,8 +22,10 @@ def templates(archive):
     return (m.arm(archive,1),m.arm(archive,5),ia.original_mesh(archive,22),
             clock.tube_a(archive,180.))
 
-def assemble(archive,angles,indices,*,source=None):
+def assemble(archive,angles,indices,*,source=None,travels=None):
     f=frames(angles,indices)
+    travels=(0.,)*len(angles) if travels is None else travels
+    if len(travels)!=len(angles): raise ValueError('one travel per joint')
     inner,outer,screw,flipped_inner=templates(archive) if source is None else source
     parts={}
     start=np.linalg.inv(c.segment_transform(indices[0]))
@@ -28,13 +33,13 @@ def assemble(archive,angles,indices,*,source=None):
     c.add(parts,"segment_0_inner",inner,f[0])
     c.add(parts,"segment_0_lock",screw,start@c.l.screw_transform("b",c.l.indexed_depth(indices[0]),c.LOCK_OFFSET,c.LOCK_PHASE))
     for j,(angle,frame) in enumerate(zip(angles,f)):
-        m.joint.parts(angle,0.)
+        m.joint.parts(angle,travels[j])
         outgoing=frame@c.rotation(angle)
         for side,i,t in (("a",1,frame),("b",5,outgoing)):
             c.add(parts,f"joint_{j}_head_{side}",ia.cad_mesh(m.head(i)),t)
             for name,solid in m.connection_hardware(i).items():
                 c.add(parts,f"joint_{j}_{side}_{name}",ia.cad_mesh(solid),t)
-        c.add(parts,f"joint_{j}_button",ia.cad_mesh(m.flush_arm.button(0.)),frame)
+        c.add(parts,f"joint_{j}_button",ia.cad_mesh(m.flush_arm.button(travels[j])),frame)
         for name,solid in m.joint.screws(angle).items():
             c.add(parts,f"joint_{j}_{name}",ia.cad_mesh(solid),frame)
         idx=indices[j+1]

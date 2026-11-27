@@ -13,7 +13,7 @@ R=22.5
 JOURNAL=16.5
 GROOVE=15.
 KEEPER_IN=15.25
-KEEPER_OUT=18.
+KEEPER_OUT=17.6
 POCKET=19.8
 SCALE=.72
 STEM=7.92
@@ -41,16 +41,15 @@ def blank(index):
                             rounded_wire(22.,16.,14.,z,2.),
                             rounded_wire(32.,14.5,14.,z,8.),
                             rounded_wire(45.,13.94,13.94,z,13.90),
-                            rounded_wire(48.,13.94,13.94,z,13.90)],ruled=True)
+                            rounded_wire(48.,13.94,13.94,z,13.90)],ruled=False)
     b=valid(disc.fuse(neck),"compact exterior")
     return turn(b,180.) if index==1 else b
 
 def lower():
     b=blank(1).fuse(cyl(JOURNAL,11.8,6.7))
     b=b.cut(ring(17.,GROOVE,14.9,3.))
-    b=b.cut(cyl(9.,-7.,7.1)).cut(teeth(0.,18.6,.35))
-    # Plunger stop, permits nominal OD <= 16 mm spring.
-    b=b.fuse(ring(11.,8.5,-3.,2.))
+    b=b.cut(cyl(9.,-7.,7.1)).cut(teeth(-1.35,20.,.35))
+    # Integral spring floor at z=-7; no ring intruding into plunger stroke.
     return old.socket(b,1)
 
 def guide(a,z,h,clear=0.):
@@ -58,30 +57,30 @@ def guide(a,z,h,clear=0.):
 
 def upper():
     b=blank(5).cut(cyl(JOURNAL+.3,12.,2.7)).cut(cyl(POCKET,14.7,27.))
-    b=b.cut(thread(POCKET,THREAD_DEPTH,2.35,9.).translate(V(0,0,32.2)))
+    b=b.cut(thread(THREAD_ROOT,THREAD_DEPTH+.4,2.6,15.).translate(V(0,0,29.2)))
     for a in (90.,270.): b=b.cut(guide(a,20.,22.,.2))
     return old.socket(b,5)
 
 def keeper(i):
     if i not in (0,1): raise ValueError("keeper index")
-    # Two nearly semicircular pieces. Insertion path tested separately.
-    b=cq.Solid.makeCylinder(KEEPER_OUT,2.6,V(0,0,15.1),V(0,0,1),178.)
-    return valid(turn(b,1.+180*i).cut(cyl(KEEPER_IN,14.,5.)),"keeper")
+    # Two opposing 100-degree sectors; rigid insertion corridor within Ø39.6.
+    b=cq.Solid.makeCylinder(KEEPER_OUT,2.6,V(0,0,15.1),V(0,0,1),100.)
+    return valid(turn(b,40.+180*i).cut(cyl(KEEPER_IN,14.,5.)),"keeper")
 
 def cartridge():
-    b=ring(19.45,18.3,14.85,4.15).fuse(cyl(19.45,18.85,15.35))
+    b=ring(19.45,17.9,14.85,4.15).fuse(cyl(19.45,18.85,15.35))
     for a in (90.,270.): b=b.fuse(guide(a,20.3,8.))
     b=b.cut(teeth(18.85,TOOTH_TOP-18.85,.35))
     b=b.cut(cyl(STEM+.35,TOOTH_TOP-.1,10.))
     return valid(b,"cartridge")
 
 def cap():
-    b=ring(THREAD_ROOT,STEM+.35,CAP_Z,7.)
+    b=ring(THREAD_ROOT,STEM+.35,CAP_Z,7.2)
     b=b.fuse(thread(THREAD_ROOT,THREAD_DEPTH,1.8,5.5).translate(V(0,0,35.2)))
-    b=b.fuse(ring(R,STEM+.35,41.35,2.05))
-    for a in range(0,360,45):
+    b=b.fuse(ring(R,STEM+.35,41.45,2.15))
+    for a in range(15,360,30):
         t=math.radians(a)
-        b=b.cut(cq.Solid.makeCylinder(1.4,.8,V(20.5*math.cos(t),20.5*math.sin(t),42.6)))
+        b=b.cut(cq.Solid.makeCylinder(1.5,2.3,V(22.5*math.cos(t),22.5*math.sin(t),41.4)))
     return valid(b,"cap")
 
 def button():
@@ -121,7 +120,7 @@ def path_samples(p):
         n=f"keeper_{i}"; sign=1 if i==0 else -1
         # A rigid half ring may not pass through the narrow annulus.
         # Explicitly reject if the proposed top-access path is blocked.
-        for r,z in [(3.,z) for z in (30.,15.,5.,2.,0.)]+[(r,0.) for r in (2.,1.,.5,0.)]:
+        for r,z in [(2.1,z) for z in (30.,15.,5.,2.,1.,.5,0.)]+[(r,0.) for r in (1.8,1.5,1.,.5,0.)]:
             sample(n,p[n].translate(V(0,sign*r,z)),installed,radial=r,lift=z)
         installed.append(n)
     for n in ("button","cartridge"):

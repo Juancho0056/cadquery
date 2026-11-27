@@ -7,12 +7,13 @@ from modular_arm.v4.chain_motion_screen import save
 
 def export(destination):
     dest=Path(destination); dest.mkdir(parents=True,exist_ok=True)
-    p=j.templates()
-    result={"status":"compact_45_candidate","diameter_mm":45.,"axis_spacing_mm":29.4,"poses":[],"path":[],"complete":False}
-    path=dest/"report.json"; save(path,result)
     folder=dest/"PRINT_STL"
     if folder.exists():
         for old in (*folder.glob("*.stl"),*folder.glob("*.step")): old.unlink()
+    (dest/"manifest.json").unlink(missing_ok=True)
+    p=j.templates()
+    result={"status":"compact_45_1_candidate","diameter_mm":45.,"axis_spacing_mm":29.4,"poses":[],"path":[],"complete":False}
+    path=dest/"report.json"; save(path,result)
     # Review even if assembly diagnostics fail. Never label these printable.
     for angle in (0.,180.):
         preview=dest/f"REVIEW_{int(angle)}"; preview.mkdir(exist_ok=True)
@@ -25,7 +26,8 @@ def export(destination):
     result["path"]=j.path_samples(p)
     result["retention"]=j.retention(p)
     result["complete"]=True
-    result["passed"]=not any(x["collisions"] for x in result["poses"]) and all(x["overlap_mm3"]<=j.TOL for x in result["path"]) and min(result["retention"].values())>j.TOL
+    result["width_mm"]={n:p[n].BoundingBox().ylen for n in ("head_a","head_b","cap")}
+    result["passed"]=max(result["width_mm"].values())<=45.001 and not any(x["collisions"] for x in result["poses"]) and all(x["overlap_mm3"]<=j.TOL for x in result["path"]) and min(result["retention"].values())>j.TOL
     save(path,result)
     if not result["passed"]:
         print("Review only: assembly diagnostics failed. Do not print.",flush=True)
@@ -40,7 +42,7 @@ def export(destination):
         cq.exporters.export(shape,str(folder/(name+".step")))
     manifest={"status":"unloaded_fit_prototype_only","diameter_mm":45,"axis_spacing_mm":29.4,
               "printable":{n:q for n,(_,q) in items.items()},
-              "assembly":"Head A, head B, two keeper halves, spring/button, keyed cartridge, threaded cap, removable seam key.",
+              "assembly":"Head A, head B, two opposing keeper sectors, spring/button, keyed cartridge, threaded cap, removable seam key.",
               "limitations":"No radial or cap screws; D+M4 retained. Key not captive. Spring fit and force unverified; magnets not qualified. No continuous clearance, load rating or full chain validation."}
     (dest/"manifest.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
     return manifest

@@ -110,9 +110,50 @@ def lock_pair(b,c):
     key=cq.Solid.makeBox(.9,2.,4.4,V(21.15,-1.,39.))
     return valid(b.cut(hole),"upper"),valid(c.cut(hole),"cap"),valid(key,"key")
 
-def templates():
+# Magnetic variant: integral pads, not loose carriers. Same exterior.
+MAGNET_RADIUS=3.
+MAGNET_HEIGHT=2.7
+MAGNET_POCKET_RADIUS=3.1
+MAGNET_POCKET_DEPTH=2.8
+MAGNET_PCD_RADIUS=4.7
+MAGNET_PAD_RADIUS=8.2
+MAGNET_BOTTOM_FACE=-5.
+MAGNET_TOP_FACE=4.
+def magnet_centres():
+    return [(MAGNET_PCD_RADIUS*math.cos(math.radians(a)),MAGNET_PCD_RADIUS*math.sin(math.radians(a))) for a in (0.,120.,240.)]
+
+def magnet_pockets(shape,upward):
+    # Floor opens upward; plunger opens downward. Recess .1 mm nominal.
+    z=MAGNET_BOTTOM_FACE-MAGNET_POCKET_DEPTH if upward else MAGNET_TOP_FACE-.05
+    h=MAGNET_POCKET_DEPTH+.05
+    for x,y in magnet_centres():
+        shape=shape.cut(cq.Solid.makeCylinder(MAGNET_POCKET_RADIUS,h,V(x,y,z)))
+    return valid(shape,"magnet pockets")
+
+def magnetic_lower():
+    return magnet_pockets(lower().fuse(cyl(MAGNET_PAD_RADIUS,-7.1,2.1)),True)
+
+def magnetic_button():
+    return magnet_pockets(button().fuse(cyl(MAGNET_PAD_RADIUS,4.,2.1)),False)
+
+def magnet_solids(travel=0.):
+    return {f"magnet_{side}_{i}":cq.Solid.makeCylinder(MAGNET_RADIUS,MAGNET_HEIGHT,V(x,y,z))
+            for side,z in (("lower",MAGNET_BOTTOM_FACE-MAGNET_POCKET_DEPTH),("upper",MAGNET_TOP_FACE+.1-travel))
+            for i,(x,y) in enumerate(magnet_centres())}
+
+def magnetic_checks(p):
+    rows=[]
+    for travel in (0.,1.,2.,3.,4.,5.,6.,7.):
+        assembly=parts(0.,travel,p)
+        mags=magnet_solids(travel)
+        defects=audit({**assembly,**mags})
+        rows.append({"travel_mm":travel,"face_gap_mm":9.2-travel,"collisions":defects})
+    return rows
+
+def templates(return_mode="spring"):
+    if return_mode not in ("spring","magnet"): raise ValueError("return mode")
     b,c,k=lock_pair(upper(),cap())
-    return {"head_a":lower(),"head_b":b,"cap":c,"key":k,"cartridge":cartridge(),"button":button(),"keeper_0":keeper(0),"keeper_1":keeper(1)}
+    return {"head_a":magnetic_lower() if return_mode=="magnet" else lower(),"head_b":b,"cap":c,"key":k,"cartridge":cartridge(),"button":magnetic_button() if return_mode=="magnet" else button(),"keeper_0":keeper(0),"keeper_1":keeper(1)}
 
 def parts(angle=0.,travel=0.,source=None):
     old.s.a.validate_pose(angle,travel)

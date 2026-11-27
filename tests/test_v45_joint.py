@@ -16,3 +16,10 @@ def test_retention(parts):
     r=j.retention(parts)
     assert r.pop("unlocked_pull_clear")<=j.TOL
     assert min(r.values())>j.TOL
+
+
+def test_magnetic_variant():
+    p=j.templates("magnet")
+    assert all(s.isValid() and len(s.Solids())==1 for s in p.values())
+    rows=j.magnetic_checks(p)
+    assert all(not row["collisions"] and row["face_gap_mm"]>=2.19 for row in rows)

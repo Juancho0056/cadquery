@@ -41,7 +41,7 @@ def blank(index):
                             rounded_wire(22.,16.,14.,z,2.),
                             rounded_wire(32.,14.5,14.,z,8.),
                             rounded_wire(45.,13.94,13.94,z,13.90),
-                            rounded_wire(48.,13.94,13.94,z,13.90)],ruled=False)
+                            rounded_wire(48.,13.94,13.94,z,13.90)],ruled=True)
     b=valid(disc.fuse(neck),"compact exterior")
     return turn(b,180.) if index==1 else b
 

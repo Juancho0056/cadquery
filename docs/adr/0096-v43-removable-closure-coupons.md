@@ -1,0 +1,2 @@
+# ADR-0096 — Cupones de cierre desmontable
+Comparar rosca helicoidal gruesa (paso 3 mm) y bayoneta de tres pestañas con rampas discretizadas, diámetro exterior 68 mm, abertura 42 mm. Llave radial extraíble de ensayo cruza la junta; no es seguro cautivo. No modificar V4.3 ni sustituir fijaciones estructurales hasta verificar montaje, ajuste, retención y fatiga. Exportar solo variantes sin interferencia nominal; no afirmar trayectoria de roscado o giro libre, ni capacidad de carga. Pruebas CAD pendientes en entorno local.

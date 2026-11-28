@@ -22,6 +22,32 @@ def validate_mesh(mesh,volume):
     if abs(mesh.volume-volume)/volume>.002:
         raise ValueError("mesh volume differs from CAD by more than 0.2%")
 
+def stitched_mesh(shape):
+    # Merge only coincident/near-coincident tessellation vertices, not holes.
+    # Maximum quantization grid 0.001 mm; geometry remains the exact CAD source.
+    diagnostics=[]
+    for linear,angular in ((.025,.08),(.0125,.06),(.05,.12)):
+        v,f=shape.copy(mesh=False).tessellate(linear,angular)
+        for digits in (7,6,5,4,3):
+            mesh=tm.Trimesh(vertices=[p.toTuple() for p in v],faces=f,process=False)
+            mesh.merge_vertices(digits_vertex=digits)
+            mesh.update_faces(mesh.nondegenerate_faces())
+            mesh.update_faces(mesh.unique_faces())
+            mesh.remove_unreferenced_vertices()
+            tm.repair.fix_normals(mesh,multibody=True)
+            import numpy as np
+            counts=np.bincount(mesh.edges_unique_inverse)
+            diag={"linear":linear,"angular":angular,"digits":digits,
+                  "boundary_edges":int((counts==1).sum()),
+                  "nonmanifold_edges":int((counts>2).sum())}
+            diagnostics.append(diag)
+            try: validate_mesh(mesh,shape.Volume())
+            except ValueError as exc:
+                diag["reason"]=str(exc)
+                continue
+            return mesh,diagnostics
+    return None,diagnostics
+
 def export(folder):
     folder=Path(folder)
     folder.mkdir(parents=True,exist_ok=True)
@@ -48,6 +74,9 @@ def export(folder):
                 volume=shape.Volume()
                 mesh,attempts=mesh_for_boolean(shape)
                 row["attempts"]=attempts
+                if mesh is None:
+                    mesh,stitch=stitched_mesh(shape)
+                    row["stitch_diagnostics"]=stitch
                 if mesh is None:
                     # Alternate native STL triangulation; re-read and certify.
                     # No arbitrary hole filling or voxel remeshing.

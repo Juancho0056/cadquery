@@ -1,0 +1,5 @@
+# V4.5 indexed clamp swivel — experimental
+
+Independent alternative to clamp_adapter.py. Original clamp, Ø27.4 insertion, original radial screw seats and D+M4 connection retained. Fixed base Ø60, rotor Ø60, journal Ø18 with radial clearance 0.3, axial gap 0.4, 12 index holes every 30 degrees at radius 23. Removable printed Ø8 index pin; nominal M4x25 cross bolt and nut retain journal (verify actual dimensions, washers and access). Pin is not captive; no load use. Four pillars support fixed plate; supports likely required. Base is not qualified for structural use. Hold unloaded arm before removing pin. No claim of continuous clearance or load capacity.
+
+Run `python examples/build_v45_clamp_swivel.py`. Output in `out/v45_clamp_swivel`. Review STEP/3MF and report; individual geometry exports gated on sampled overlap and stop checks. Clear old outputs before retesting. Tests NOT_RUN at publication; full clamp and elbow integration, actual bolt/washer fit, assembly paths, pin retention, strength, fatigue and creep NOT_RUN. No third-party geometry committed. Do not load prototype.

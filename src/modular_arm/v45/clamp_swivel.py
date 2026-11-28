@@ -9,7 +9,7 @@ R=30.
 AXLE_R=9.
 RADIAL=.3
 GAP=.4
-PLATE_Z=18.
+PLATE_Z=22.
 PLATE_H=8.
 ROTOR_H=9.
 INDEX_R=23.
@@ -27,10 +27,11 @@ def xy(angle,r=INDEX_R):
 def fixed():
     # Preserve original clamp stem and shoulder, including its retention seats.
     b=a.build().intersect(cq.Solid.makeBox(80,80,a.STEM_LENGTH+a.FLANGE_H,V(-40,-40,-a.STEM_LENGTH)))
+    b=b.fuse(cyl(R,a.FLANGE_H-.2,4.2))
     # Four supports outside the axle-retainer sweep. Open access below plate.
     for angle in (45,135,225,315):
-        x,y=xy(angle,15.)
-        b=b.fuse(cyl(5.,a.FLANGE_H-.2,PLATE_Z-a.FLANGE_H+.4,x,y))
+        x,y=xy(angle,23.)
+        b=b.fuse(cyl(5.,9.8,PLATE_Z-9.8+.2,x,y))
     b=b.fuse(cyl(R,PLATE_Z,PLATE_H))
     b=b.cut(cyl(AXLE_R+RADIAL,PLATE_Z-.1,PLATE_H+.2))
     for angle in ANGLES:
@@ -44,7 +45,7 @@ def rotor():
     b=b.fuse(male)
     b=b.cut(cq.Solid.makeCylinder(m.PIN_RADIUS,40,V(0,-20,D_Z+m.JOIN-m.PIN_AT),V(0,1,0)))
     # M4 transverse axle retainer below the fixed plate.
-    b=b.cut(cq.Solid.makeCylinder(m.PIN_RADIUS,40,V(0,-20,15.),V(0,1,0)))
+    b=b.cut(cq.Solid.makeCylinder(m.PIN_RADIUS,40,V(0,-20,16.),V(0,1,0)))
     b=b.cut(cyl(INDEX_PIN_R+INDEX_CLEAR,ROTOR_Z-.1,ROTOR_H+.2,INDEX_R,0))
     return m.valid(b.clean(),"swivel rotor")
 def index_pin():
@@ -53,7 +54,10 @@ def index_pin():
     return m.valid(b.clean(),"index pin")
 def retainer_gauge():
     # Nominal M4x25 with nut/washer envelopes; actual hardware not modeled as threads.
-    return cq.Solid.makeCylinder(2.,25.,V(0,-12.5,15.),V(0,1,0))
+    shaft=cq.Solid.makeCylinder(2.,25.,V(0,-10.,16.),V(0,1,0))
+    head=cq.Solid.makeCylinder(3.8,2.2,V(0,-12.2,16.),V(0,1,0))
+    nut=cq.Solid.makeCylinder(4.1,4.,V(0,10.,16.),V(0,1,0))
+    return shaft.fuse(head).fuse(nut).clean()
 def parts(angle=0.,locked=True):
     b={"fixed":fixed(),"rotor":rotor().rotate((0,0,0),(0,0,1),angle),
        "retainer_gauge":retainer_gauge().rotate((0,0,0),(0,0,1),angle)}
@@ -67,6 +71,11 @@ def audit():
         for x,y in combinations(p,2):
             vol=p[x].intersect(p[y]).Volume()
             checks.append({"angle":angle,"pair":[x,y],"intersection_mm3":vol,"status":"PASS" if vol<.01 else "FAIL"})
+    p=parts()
+    axial=p["retainer_gauge"].translate(V(0,0,8.)).intersect(p["fixed"]).Volume()
+    angular=p["index_pin"].rotate((0,0,0),(0,0,1),15.).intersect(p["fixed"]).Volume()
+    checks.extend([{"pair":["axial_stop"],"intersection_mm3":axial,"status":"PASS" if axial>.01 else "FAIL"},
+                   {"pair":["angular_stop"],"intersection_mm3":angular,"status":"PASS" if angular>.01 else "FAIL"}])
     return {"status":"UNLOADED_REVIEW_ONLY","sampled_checks":checks,
             "passed":all(c["status"]=="PASS" for c in checks),
             "physical_load":"NOT_RUN","retainer_hardware_fit":"NOT_RUN","pin_retention":"NOT_RUN"}
@@ -78,6 +87,8 @@ def export(folder):
     assembly=cq.Assembly()
     for name,shape in p.items(): assembly.add(shape,name=name)
     assembly.save(str(folder/"REVIEW_NO_IMPRIMIR.step"))
+    cq.exporters.export(cq.Compound.makeCompound(list(p.values())),str(folder/"REVIEW_NO_IMPRIMIR.3mf"))
+    if not report['passed']: return report
     for name in ("fixed","rotor","index_pin"):
         shape=p[name]
         shape=shape.translate(V(0,0,-shape.BoundingBox().zmin))

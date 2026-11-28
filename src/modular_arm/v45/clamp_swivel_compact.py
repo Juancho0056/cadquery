@@ -21,6 +21,8 @@ STROKE=5.2
 ANGLES=tuple(range(0,360,30))
 ENTRIES=(45,165,285)
 TURN=30.
+GRIP_RADIUS=1.5
+GRIP_ANGLES=tuple(range(15,360,30))
 TOL=.01
 
 def cyl(r,z,h): return cq.Solid.makeCylinder(r,h,V(0,0,z))
@@ -61,6 +63,10 @@ def cap():
     b=ring(CAP_R,14.,CAP_Z,6.6)
     for ang in ENTRIES: b=b.fuse(sector(ang+TURN-8,23.,26.,23.,2.,16))
     b=b.fuse(ring(R,14.,27.1,2.1))
+    # Same peripheral finger scallop principle as the V4.5 elbow.
+    for angle in GRIP_ANGLES:
+        t=math.radians(angle)
+        b=b.cut(cq.Solid.makeCylinder(GRIP_RADIUS,2.3,V(R*math.cos(t),R*math.sin(t),27.0)))
     return m.valid(b.cut(seam()).clean(),"compact swivel cap")
 def cap_key(): return box(22.,-1.1,25.7,3.5,2.2,3.4)
 def pin():
@@ -101,7 +107,14 @@ def audit():
         record(f"pin travel {dx}",overlap(s,p["fixed"])+overlap(s,p["rotor"]))
     record("rotor axial retention",overlap(p["rotor"].translate(V(0,0,1.)),p["cap"]),True)
     record("bayonet axial retention",overlap(p["cap"].translate(V(0,0,1.)),p["fixed"]),True)
-    record("cap key retention",overlap(turn(p["cap"],-5),p["cap_key"]),True)
+    # The rigid seam key bridges both housing and cap, only after closing.
+    record("cap reverse stop by key",overlap(turn(p["cap"],-5),p["cap_key"]),True)
+    record("cap forward stop by key",overlap(turn(p["cap"],5),p["cap_key"]),True)
+    record("key reaction against housing",overlap(turn(p["cap_key"],-5),p["fixed"]),True)
+    record("bayonet end stop",overlap(turn(p["cap"],5),p["fixed"]),True)
+    record("unlocked cap extraction",overlap(turn(p["cap"],-TURN).translate(V(0,0,5.)),p["fixed"]))
+    for angle in (-30,-20,-10):
+        record(f"key rejects incomplete closure {angle}",overlap(turn(p["cap"],angle),p["cap_key"]),True)
     record("angular stop",overlap(turn(p["rotor"],15),p["pin"]),True)
     record("pin outward stop",overlap(p["pin"].translate(V(7,0,0)),p["fixed"]),True)
     record("pin inward stop",overlap(p["pin"].translate(V(-2,0,0)),p["rotor"]),True)
@@ -120,6 +133,12 @@ def export(folder):
         for n,s in q.items(): assembly.add(s,name=n)
         assembly.save(str(folder/("REVIEW_"+name+".step")))
         cq.exporters.export(cq.Compound.makeCompound(list(q.values())),str(folder/("REVIEW_"+name+"_NO_IMPRIMIR.3mf")))
+    # Explicit review of the three closure stages; radial indexing unchanged.
+    for label,angle,lift,key_installed in (("CAP_ENTRY",-TURN,5.,False),("CAP_INSERTED",-TURN,0.,False),("CAP_SECURED",0.,0.,True)):
+        q=parts()
+        q["cap"]=turn(q["cap"],angle).translate(V(0,0,lift))
+        if not key_installed: del q["cap_key"]
+        cq.exporters.export(cq.Compound.makeCompound(list(q.values())),str(folder/("REVIEW_"+label+"_NO_IMPRIMIR.3mf")))
     report=audit()
     (folder/"report.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
     # Even if sampled tests pass, pin insertion is not yet verified: review-only.

@@ -51,7 +51,8 @@ def fixed():
     return m.valid(b.clean(),"compact swivel fixed")
 def rotor():
     b=cyl(ROTOR_R,ROT_Z,ROT_H).fuse(cyl(JOURNAL,7.,ROT_Z-7.+.2))
-    b=b.fuse(cyl(13.5,20.2,D_Z-20.2+.2))
+    b=b.fuse(cyl(13.5,20.2,D_Z-20.2))
+    # Shoulder ends at the canonical mating plane; only the D tenon enters the socket.
     male=cyl(m.RADIUS,D_Z-.1,m.LENGTH+.1)
     male=male.cut(box(m.FLAT,-20,D_Z-.2,20,40,m.LENGTH+.4))
     b=b.fuse(male)

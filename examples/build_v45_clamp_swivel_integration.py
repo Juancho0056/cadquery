@@ -61,6 +61,23 @@ def mesh_for_boolean(shape):
             return mesh,attempts
     return None,attempts
 
+def fixed_interface_mesh(shape, other):
+    """Clip exact CAD to a padded box containing the entire comparison mesh.
+    Outside this box no intersection with other is possible.
+    This is a local boolean operand, NOT a printable replacement.
+    """
+    if not other.is_volume:
+        raise ValueError("Reference mesh must be a closed oriented volume")
+    lo=other.bounds[0]-1.
+    hi=other.bounds[1]+1.
+    clip=cq.Solid.makeBox(*(hi-lo).tolist(),cq.Vector(*lo.tolist()))
+    region=shape.intersect(clip).clean()
+    if not region.isValid() or not region.Solids():
+        raise ValueError("Invalid or empty clipped CAD interface")
+    mesh,attempts=mesh_for_boolean(region)
+    return mesh,{"clip_bounds_mm":[lo.tolist(),hi.tolist()],
+                 "cad_region_volume_mm3":region.Volume(),"attempts":attempts}
+
 def write_scene(parts,path):
     scene=tm.Scene()
     for n,p in parts.items(): scene.add_geometry(p if isinstance(p,tm.Trimesh) else cad_mesh(p),geom_name=n,node_name=n)
@@ -81,6 +98,8 @@ def build(archive,folder):
     templates=j.templates("magnet")
     report["mesh_diagnostics"]={}
     mesh_cache={}
+    interface_cache={}
+    report["interface_mesh_diagnostics"]={}
     def checked_mesh(name,shape):
         if name not in mesh_cache:
             mesh,attempts=mesh_for_boolean(shape)
@@ -111,8 +130,21 @@ def build(archive,folder):
                         if isinstance(p,tm.Trimesh): return p
                         key=n if n in ("swivel_fixed","swivel_cap","swivel_pin_key") else f"{n}@{angle}"
                         return checked_mesh(key,p)
-                    v=overlap(mesh(x,a),mesh(y,b))
-                    row["engine"]="MESH_MANIFOLD"
+                    if x=="swivel_fixed" and isinstance(b,tm.Trimesh):
+                        # The full casing fails tessellation near unrelated features.
+                        # Test all CAD material within a box enclosing the reference.
+                        if y not in interface_cache:
+                            local,diag=fixed_interface_mesh(a,b)
+                            interface_cache[y]=local
+                            report["interface_mesh_diagnostics"][y]=diag
+                        local=interface_cache[y]
+                        if local is None:
+                            raise ValueError(f"No closed interface tessellation: {y}")
+                        v=overlap(local,b)
+                        row["engine"]="CLIPPED_CAD_MESH_MANIFOLD"
+                    else:
+                        v=overlap(mesh(x,a),mesh(y,b))
+                        row["engine"]="MESH_MANIFOLD"
                 row.update(intersection_mm3=v,status="PASS" if v<=.05 else "FAIL")
             except Exception as e:
                 row.update(status="NOT_RUN",reason=str(e))

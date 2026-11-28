@@ -18,3 +18,12 @@ Outputs: STEP, STL, 3MF in out/v45_clamp_adapter. No slicer profile. Existing jo
 
 ## Indexed revision
 The original clamp mesh shows a radial locking screw axis 9 mm below the socket mouth (original Y=45, mouth Y=54). Four conical seats at 90-degree spacing are added to the stem; use the original locking screw. This is an indexed positioning candidate, not a continuous swivel. A nominal 1 mm shoulder/neck fillet preserves the bearing face. The underside shoulder may still require supports. Local CadQuery check with canonical dimension constants: valid single solid, 48 mm height, M4 gauge passage unobstructed. Full repository execution, original screw seating, pull-out, angular retention and load tests remain NOT_RUN. Do not load until verified.
+
+## Assembly review generator
+Run from repository root with the original local archive:
+
+```powershell
+python examples/build_v45_clamp_assembly.py "C:\path\modular_clamp_v1 (1).3mf"
+```
+
+The generator reads original body and locking screw by object IDs and names, measures the socket section at source Y=53.9, registers the adapter at the mouth, and positions the canonical magnetic V4.5 joint using its B socket. The screw tip placement is a trial, not a verified thread engagement. Exports a reference-only 3MF and JSON intersection report. Requires trimesh and manifold3d for volume checks. No original geometry is committed. This is a static subset (body, locking screw, adapter, elbow), not the complete clamp jaw assembly. Full generator execution and all assembled collision results are NOT_RUN at publication. A PASS of sampled volume checks is not qualification of shoulder contact, extraction, rotation, hardware, or load. Do not print the assembly file.

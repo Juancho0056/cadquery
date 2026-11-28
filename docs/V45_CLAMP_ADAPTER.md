@@ -15,3 +15,6 @@ Outputs: STEP, STL, 3MF in out/v45_clamp_adapter. No slicer profile. Existing jo
 - Positive rotation lock, pull-out retention and physical load tests: NOT_RUN.
 - Do not use under load until the clamp-side retention and complete assembly are verified.
 - A separate female adapter is required if mounting a free male telescopic segment directly.
+
+## Indexed revision
+The original clamp mesh shows a radial locking screw axis 9 mm below the socket mouth (original Y=45, mouth Y=54). Four conical seats at 90-degree spacing are added to the stem; use the original locking screw. This is an indexed positioning candidate, not a continuous swivel. A nominal 1 mm shoulder/neck fillet preserves the bearing face. The underside shoulder may still require supports. Local CadQuery check with canonical dimension constants: valid single solid, 48 mm height, M4 gauge passage unobstructed. Full repository execution, original screw seating, pull-out, angular retention and load tests remain NOT_RUN. Do not load until verified.

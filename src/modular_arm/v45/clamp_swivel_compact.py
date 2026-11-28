@@ -32,7 +32,6 @@ def turn(s,a): return s.rotate((0,0,0),(0,0,1),a)
 def ring(ro,ri,z,h): return cyl(ro,z,h).cut(cyl(ri,z-.1,h+.2))
 def sector(a0,lo,hi,z,h,sweep):
     return turn(cq.Solid.makeCylinder(hi,h,V(0,0,z),V(0,0,1),sweep).cut(cyl(lo,z-.1,h+.2)),a0)
-def seam(): return box(21.8,-1.4,25.5,3.9,2.8,4.)
 def fixed():
     b=a.build().intersect(box(-40,-40,-a.STEM_LENGTH,80,80,a.STEM_LENGTH+a.FLANGE_H))
     b=b.fuse(cq.Solid.makeCone(a.FLANGE_D/2,R,6.2,V(0,0,5.8)))
@@ -49,7 +48,7 @@ def fixed():
     b=b.cut(radial(2.8,29.9,6.))
     # Vertical removable safety key intersects one of two pin holes.
     b=b.cut(cq.Solid.makeCylinder(1.45,10.,V(33,0,11.5)))
-    return m.valid(b.cut(seam()).clean(),"compact swivel fixed")
+    return m.valid(b.clean(),"compact swivel fixed")
 def rotor():
     b=cyl(ROTOR_R,ROT_Z,ROT_H).fuse(cyl(JOURNAL,7.,ROT_Z-7.+.2))
     b=b.fuse(cyl(13.5,20.2,D_Z-20.2+.2))
@@ -67,8 +66,7 @@ def cap():
     for angle in GRIP_ANGLES:
         t=math.radians(angle)
         b=b.cut(cq.Solid.makeCylinder(GRIP_RADIUS,2.3,V(R*math.cos(t),R*math.sin(t),27.0)))
-    return m.valid(b.cut(seam()).clean(),"compact swivel cap")
-def cap_key(): return box(22.,-1.1,25.7,3.5,2.2,3.4)
+    return m.valid(b.clean(),"compact swivel cap")
 def pin():
     b=radial(2.5,17.5,24.).fuse(radial(3.7,22.2,2.))
     for x in (33.,33.-STROKE):
@@ -77,7 +75,7 @@ def pin():
 def pin_key(): return cq.Solid.makeCylinder(1.15,10.,V(33,0,11.8))
 def parts(angle=0.,locked=True):
     if locked and abs(angle/30-round(angle/30))>1e-8: raise ValueError("not indexed")
-    return {"fixed":fixed(),"rotor":turn(rotor(),angle),"cap":cap(),"cap_key":cap_key(),
+    return {"fixed":fixed(),"rotor":turn(rotor(),angle),"cap":cap(),
             "pin":pin().translate(V(0 if locked else STROKE,0,0)),"pin_key":pin_key()}
 def overlap(a,b): return a.intersect(b).Volume()
 def audit():
@@ -94,7 +92,7 @@ def audit():
     for lift in (20.,10.,5.,2.,1.,0.):
         record(f"rotor insertion {lift}",overlap(p["rotor"].translate(V(0,0,lift)),p["fixed"])+overlap(p["rotor"].translate(V(0,0,lift)),p["pin"].translate(V(STROKE,0,0))))
     for lift in (8.,4.,2.,1.,0.):
-        for key in ("cap_key","pin_key"):
+        for key in ("pin_key",):
             record(f"{key} insertion {lift}",sum(overlap(p[key].translate(V(0,0,lift)),p[n]) for n in ("fixed","cap","rotor","pin")))
     for lift in (8.,5.,2.,1.,0.):
         s=turn(p["cap"],-TURN).translate(V(0,0,lift))
@@ -107,25 +105,20 @@ def audit():
         record(f"pin travel {dx}",overlap(s,p["fixed"])+overlap(s,p["rotor"]))
     record("rotor axial retention",overlap(p["rotor"].translate(V(0,0,1.)),p["cap"]),True)
     record("bayonet axial retention",overlap(p["cap"].translate(V(0,0,1.)),p["fixed"]),True)
-    # The rigid seam key bridges both housing and cap, only after closing.
-    record("cap reverse stop by key",overlap(turn(p["cap"],-5),p["cap_key"]),True)
-    record("cap forward stop by key",overlap(turn(p["cap"],5),p["cap_key"]),True)
-    record("key reaction against housing",overlap(turn(p["cap_key"],-5),p["fixed"]),True)
     record("bayonet end stop",overlap(turn(p["cap"],5),p["fixed"]),True)
     record("unlocked cap extraction",overlap(turn(p["cap"],-TURN).translate(V(0,0,5.)),p["fixed"]))
-    for angle in (-30,-20,-10):
-        record(f"key rejects incomplete closure {angle}",overlap(turn(p["cap"],angle),p["cap_key"]),True)
     record("angular stop",overlap(turn(p["rotor"],15),p["pin"]),True)
     record("pin outward stop",overlap(p["pin"].translate(V(7,0,0)),p["fixed"]),True)
     record("pin inward stop",overlap(p["pin"].translate(V(-2,0,0)),p["rotor"]),True)
     record("pin safety key",overlap(p["pin"].translate(V(1.5,0,0)),p["pin_key"]),True)
     return {"status":"UNLOADED_REVIEW_ONLY","passed":all(r["status"]=="PASS" for r in rows),"checks":rows,
-            "continuous_assembly_path":"NOT_RUN","key_retention_under_vibration":"NOT_RUN","full_clamp_joint_integration":"NOT_RUN","load":"NOT_RUN"}
+            "continuous_assembly_path":"NOT_RUN","cap_reverse_retention":"NOT_RUN_NO_POSITIVE_STOP","pin_key_retention_under_vibration":"NOT_RUN","full_clamp_joint_integration":"NOT_RUN","load":"NOT_RUN"}
 def export(folder):
     folder=Path(folder);folder.mkdir(parents=True,exist_ok=True)
     for ext in ("stl","3mf","step"):
         for name in ("fixed","rotor","cap","cap_key","pin","pin_key"):
             (folder/(name+"."+ext)).unlink(missing_ok=True)
+    (folder/"REVIEW_CAP_SECURED_NO_IMPRIMIR.3mf").unlink(missing_ok=True)
     p=parts()
     for name,locked in (("LOCKED",True),("RELEASED",False)):
         q=parts(0 if locked else 15,locked)
@@ -134,12 +127,11 @@ def export(folder):
         assembly.save(str(folder/("REVIEW_"+name+".step")))
         cq.exporters.export(cq.Compound.makeCompound(list(q.values())),str(folder/("REVIEW_"+name+"_NO_IMPRIMIR.3mf")))
     # Explicit review of the three closure stages; radial indexing unchanged.
-    for label,angle,lift,key_installed in (("CAP_ENTRY",-TURN,5.,False),("CAP_INSERTED",-TURN,0.,False),("CAP_SECURED",0.,0.,True)):
+    for label,angle,lift in (("CAP_ENTRY",-TURN,5.),("CAP_INSERTED",-TURN,0.),("CAP_TURNED",0.,0.)):
         q=parts()
         q["cap"]=turn(q["cap"],angle).translate(V(0,0,lift))
-        if not key_installed: del q["cap_key"]
         cq.exporters.export(cq.Compound.makeCompound(list(q.values())),str(folder/("REVIEW_"+label+"_NO_IMPRIMIR.3mf")))
     report=audit()
     (folder/"report.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
-    # Even if sampled tests pass, pin insertion is not yet verified: review-only.
+    # Bayonet axial retention only; reverse rotation is not positively blocked. Review-only.
     return report

@@ -34,7 +34,7 @@ def seam(): return box(21.8,-1.4,25.5,3.9,2.8,4.)
 def fixed():
     b=a.build().intersect(box(-40,-40,-a.STEM_LENGTH,80,80,a.STEM_LENGTH+a.FLANGE_H))
     b=b.fuse(cq.Solid.makeCone(a.FLANGE_D/2,R,6.2,V(0,0,5.8)))
-    b=b.fuse(cyl(R,11.8,15.4))
+    b=b.fuse(cyl(R,11.8,15.2))
     b=b.cut(cyl(JOURNAL+CLEAR,6.5,5.7))
     b=b.cut(cyl(ROTOR_R+CLEAR,12.,8.6))
     b=b.cut(cyl(CAP_R+CLEAR,20.6,7.))
@@ -83,8 +83,13 @@ def audit():
         q=dict(p);q["rotor"]=turn(p["rotor"],angle)
         q["pin"]=p["pin"].translate(V(0 if angle%30==0 else STROKE,0,0))
         for x,y in combinations(q,2): record(f"pose {angle} {x}/{y}",overlap(q[x],q[y]))
+    for dx in range(-25,1):
+        record(f"pin insertion {dx}",overlap(p["pin"].translate(V(dx,0,0)),p["fixed"]))
     for lift in (20.,10.,5.,2.,1.,0.):
-        record(f"rotor insertion {lift}",overlap(p["rotor"].translate(V(0,0,lift)),p["fixed"]))
+        record(f"rotor insertion {lift}",overlap(p["rotor"].translate(V(0,0,lift)),p["fixed"])+overlap(p["rotor"].translate(V(0,0,lift)),p["pin"].translate(V(STROKE,0,0))))
+    for lift in (8.,4.,2.,1.,0.):
+        for key in ("cap_key","pin_key"):
+            record(f"{key} insertion {lift}",sum(overlap(p[key].translate(V(0,0,lift)),p[n]) for n in ("fixed","cap","rotor","pin")))
     for lift in (8.,5.,2.,1.,0.):
         s=turn(p["cap"],-TURN).translate(V(0,0,lift))
         record(f"cap insertion {lift}",overlap(s,p["fixed"])+overlap(s,p["rotor"]))
@@ -99,9 +104,10 @@ def audit():
     record("cap key retention",overlap(turn(p["cap"],-5),p["cap_key"]),True)
     record("angular stop",overlap(turn(p["rotor"],15),p["pin"]),True)
     record("pin outward stop",overlap(p["pin"].translate(V(7,0,0)),p["fixed"]),True)
+    record("pin inward stop",overlap(p["pin"].translate(V(-2,0,0)),p["rotor"]),True)
     record("pin safety key",overlap(p["pin"].translate(V(1.5,0,0)),p["pin_key"]),True)
     return {"status":"UNLOADED_REVIEW_ONLY","passed":all(r["status"]=="PASS" for r in rows),"checks":rows,
-            "pin_installation_path":"NOT_RUN","key_retention_under_vibration":"NOT_RUN","full_clamp_joint_integration":"NOT_RUN","load":"NOT_RUN"}
+            "continuous_assembly_path":"NOT_RUN","key_retention_under_vibration":"NOT_RUN","full_clamp_joint_integration":"NOT_RUN","load":"NOT_RUN"}
 def export(folder):
     folder=Path(folder);folder.mkdir(parents=True,exist_ok=True)
     for ext in ("stl","3mf","step"):

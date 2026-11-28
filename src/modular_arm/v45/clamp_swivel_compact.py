@@ -34,7 +34,12 @@ def sector(a0,lo,hi,z,h,sweep):
     return turn(cq.Solid.makeCylinder(hi,h,V(0,0,z),V(0,0,1),sweep).cut(cyl(lo,z-.1,h+.2)),a0)
 def fixed():
     b=a.build().intersect(box(-40,-40,-a.STEM_LENGTH,80,80,a.STEM_LENGTH+a.FLANGE_H))
-    b=b.fuse(cq.Solid.makeCone(a.FLANGE_D/2,R,6.2,V(0,0,5.8)))
+    # Extend the same conical surface into the flange by 0.2 mm.
+    # Avoid coincident circular base/flange edges at z=5.8 that leave
+    # nonconforming tessellation boundaries. External slope unchanged.
+    extension=.2
+    slope=(R-a.FLANGE_D/2)/6.2
+    b=b.fuse(cq.Solid.makeCone(a.FLANGE_D/2-slope*extension,R,6.2+extension,V(0,0,5.8-extension)))
     b=b.fuse(cyl(R,11.8,15.2))
     b=b.cut(cyl(JOURNAL+CLEAR,6.5,5.7))
     b=b.cut(cyl(ROTOR_R+CLEAR,12.,8.6))

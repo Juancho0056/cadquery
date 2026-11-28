@@ -40,17 +40,30 @@ def elbow(angle,templates):
         shape=shape.rotate((0,0,0),(0,1,0),90)
         shape=shape.translate(cq.Vector(-axis,0,s.D_Z+m.JOIN))
         return s.turn(shape,angle)
-    out={"elbow_"+n:cad_mesh(place(p)) for n,p in templates.items()}
+    out={"elbow_"+n:place(p) for n,p in templates.items() if n!="key"}
     # Use canonical hardware envelopes, not substitute fastener dimensions.
     # Translate original B hardware to the compact B socket axis.
     dz=axis-j.old.s.f.AXES[5]
     for n,p in m.connection_hardware(5).items():
-        out["hardware_"+n]=cad_mesh(place(p.translate(cq.Vector(0,0,dz))))
+        out["hardware_"+n]=place(p.translate(cq.Vector(0,0,dz)))
     return out
+
+def mesh_for_boolean(shape):
+    attempts=[]
+    for linear,angular in ((.025,.08),(.05,.12),(.0125,.06),(.1,.15)):
+        v,f=shape.copy(mesh=False).tessellate(linear,angular)
+        mesh=tm.Trimesh(vertices=[p.toTuple() for p in v],faces=f,process=True)
+        tm.repair.fix_normals(mesh,multibody=True)
+        error=abs(mesh.volume-shape.Volume())/max(shape.Volume(),1e-9)
+        attempts.append({"linear":linear,"angular":angular,"watertight":bool(mesh.is_watertight),
+                         "winding":bool(mesh.is_winding_consistent),"relative_volume_error":float(error)})
+        if mesh.is_volume and error<=.002:
+            return mesh,attempts
+    return None,attempts
 
 def write_scene(parts,path):
     scene=tm.Scene()
-    for n,p in parts.items(): scene.add_geometry(p,geom_name=n,node_name=n)
+    for n,p in parts.items(): scene.add_geometry(p if isinstance(p,tm.Trimesh) else cad_mesh(p),geom_name=n,node_name=n)
     path.write_bytes(scene.export(file_type="3mf"))
 
 def build(archive,folder):
@@ -66,9 +79,19 @@ def build(archive,folder):
     clamp,center=clamp_parts(archive)
     report["socket_center_source_xz_mm"]=[float(center[0]),float(center[2])]
     templates=j.templates("magnet")
+    report["mesh_diagnostics"]={}
+    mesh_cache={}
+    def checked_mesh(name,shape):
+        if name not in mesh_cache:
+            mesh,attempts=mesh_for_boolean(shape)
+            mesh_cache[name]=mesh
+            report["mesh_diagnostics"][name]=attempts
+        mesh=mesh_cache[name]
+        if mesh is None: raise ValueError(f"No closed tessellation: {name}")
+        return mesh
     for angle in range(0,360,15):
         locked=angle%30==0
-        base={"swivel_"+n:cad_mesh(p) for n,p in s.parts(angle,locked).items()}
+        base={"swivel_"+n:p for n,p in s.parts(angle,locked).items()}
         head=elbow(angle,templates)
         parts={**clamp,**base,**head}
         if angle in (0,15,90,180,270):
@@ -79,7 +102,17 @@ def build(archive,folder):
         for x,y in pairs:
             row={"angle":angle,"locked":locked,"pair":[x,y]}
             try:
-                v=overlap(parts[x],parts[y])
+                a,b=parts[x],parts[y]
+                if not isinstance(a,tm.Trimesh) and not isinstance(b,tm.Trimesh):
+                    v=a.intersect(b).Volume()
+                    row["engine"]="CAD_BREP"
+                else:
+                    def mesh(n,p):
+                        if isinstance(p,tm.Trimesh): return p
+                        key=n if n in ("swivel_fixed","swivel_cap","swivel_pin_key") else f"{n}@{angle}"
+                        return checked_mesh(key,p)
+                    v=overlap(mesh(x,a),mesh(y,b))
+                    row["engine"]="MESH_MANIFOLD"
                 row.update(intersection_mm3=v,status="PASS" if v<=.05 else "FAIL")
             except Exception as e:
                 row.update(status="NOT_RUN",reason=str(e))

@@ -10,3 +10,6 @@ Insert pin from inside empty housing, retract, insert rotor, lower cap in entry 
 python examples/build_v45_clamp_swivel_compact.py
 ```
 Outputs locked/released review STEP and 3MF plus JSON. Individual printable exports intentionally disabled until verified. Tests include sampled pair overlaps, pin insertion/travel, rotor insertion, cap insertion/turn, key insertion and nominal stop overlap. All tests NOT_RUN at publication. Continuous motion, clamp/elbow integration, actual assembly, printability, fatigue, creep, retention under vibration and structural capacity NOT_RUN. No claim of 1 kg capacity. Do not print the assembled reference or use under load.
+
+## Cap revision: elbow-style closure
+Added twelve peripheral scallops (radius 1.5 mm, same nominal radius as elbow) in the top flange. Retained three bayonet lugs and 30-degree rotation. The closure uses a manually inserted rigid seam key, not an automatic flexible detent; the key remains removable. Added sampled checks for reverse/forward key stop, housing reaction, bayonet end stop, extraction in unlocked position and rejection of incomplete closure. Additional 3MF review stages: CAP_ENTRY, CAP_INSERTED, CAP_SECURED. No change to rotor, lower clamp interface, D+M4 or radial indexing pin. All new checks NOT_RUN at publication. Review-only exports; no fabrication or load approval.
